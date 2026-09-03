@@ -8,7 +8,12 @@ import { allowedNextStates } from '../services/simulation/stateMachine.js';
 
 export const listProjects = asyncHandler(async (_req: Request, res: Response) => {
   const projects = await prisma.project.findMany({
-    include: { region: true, ngo: true, tiers: { orderBy: { order: 'asc' } }, milestones: true },
+    include: {
+      region: true,
+      ngo: true,
+      tiers: { orderBy: { order: 'asc' } },
+      milestones: { orderBy: { order: 'asc' }, include: { evidence: true } },
+    },
     orderBy: { createdAt: 'asc' },
   });
   res.json(projects);

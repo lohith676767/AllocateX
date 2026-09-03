@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { FileImage, MapPin, X } from 'lucide-react';
-import { useState } from 'react';
+import { FileImage, MapPin, Upload, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { useApiErrorToast, useToast } from '../hooks/useToast';
 import { api } from '../services/api';
 import type { Milestone } from '../types';
@@ -9,9 +9,25 @@ export default function EvidenceModal({ milestone, onClose }: { milestone: Miles
   const queryClient = useQueryClient();
   const { push } = useToast();
   const onError = useApiErrorToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [filename, setFilename] = useState('');
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [description, setDescription] = useState('');
   const [location, setLocation] = useState('25.4358° N, 78.5685° E (simulated GPS)');
+
+  useEffect(() => {
+    return () => {
+      if (previewUrl) URL.revokeObjectURL(previewUrl);
+    };
+  }, [previewUrl]);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFilename(file.name);
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+    setPreviewUrl(file.type.startsWith('image/') ? URL.createObjectURL(file) : null);
+  };
 
   const submit = useMutation({
     mutationFn: () => api.submitEvidence(milestone.id, { filename, description, simulatedLocation: location }),
@@ -44,17 +60,45 @@ export default function EvidenceModal({ milestone, onClose }: { milestone: Miles
           }}
         >
           <label className="block">
-            <span className="text-xs font-medium text-mist-300">Document / photo filename</span>
-            <div className="mt-1 flex items-center gap-2 rounded-lg border border-ink-600 bg-ink-800 px-3 py-2">
-              <FileImage size={14} className="text-mist-400" />
-              <input
-                required
-                value={filename}
-                onChange={(e) => setFilename(e.target.value)}
-                placeholder="site_completion_photo.jpg"
-                className="w-full bg-transparent text-sm text-mist-100 outline-none placeholder:text-mist-400/60"
-              />
-            </div>
+            <span className="text-xs font-medium text-mist-300">Document / photo</span>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*,.pdf,.doc,.docx"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              className="mt-1 flex w-full items-center gap-3 rounded-lg border border-dashed border-ink-600 bg-ink-800 px-3 py-3 text-left hover:border-signal-teal/40"
+            >
+              {previewUrl ? (
+                <img src={previewUrl} alt="" className="h-10 w-10 shrink-0 rounded object-cover" />
+              ) : (
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-ink-700">
+                  <Upload size={15} className="text-mist-400" />
+                </span>
+              )}
+              <span className="min-w-0">
+                <span className="block truncate text-sm text-mist-100">{filename || 'Choose a file…'}</span>
+                <span className="block text-[11px] text-mist-400">
+                  {filename ? 'Click to replace' : 'Photo, PDF, or document from this device'}
+                </span>
+              </span>
+            </button>
+            {/* Filename stays editable in case the presenter wants to adjust it without re-picking a file. */}
+            {filename && (
+              <div className="mt-1.5 flex items-center gap-2 rounded-lg border border-ink-700 bg-ink-800/40 px-3 py-1.5">
+                <FileImage size={12} className="shrink-0 text-mist-400" />
+                <input
+                  required
+                  value={filename}
+                  onChange={(e) => setFilename(e.target.value)}
+                  className="w-full bg-transparent text-xs text-mist-300 outline-none"
+                />
+              </div>
+            )}
           </label>
           <label className="block">
             <span className="text-xs font-medium text-mist-300">Description</span>
@@ -80,7 +124,8 @@ export default function EvidenceModal({ milestone, onClose }: { milestone: Miles
             </div>
           </label>
           <p className="rounded-lg border border-ink-700 bg-ink-800/40 px-3 py-2 text-[11px] leading-relaxed text-mist-400">
-            Evidence is human-reviewable, not automatically verified. No computer vision or ML runs on the file.
+            The file itself is never uploaded to a server — only its name, alongside your description and location, is
+            recorded for human review. No computer vision or ML runs on it.
           </p>
           <button
             type="submit"

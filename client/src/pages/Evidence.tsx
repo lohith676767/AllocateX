@@ -25,7 +25,10 @@ export default function Evidence() {
   if (projects.isError) return <ErrorState message="Could not load evidence." onRetry={() => projects.refetch()} />;
 
   const withEvidence = milestones.filter((m) => m.milestone.evidence);
-  const withoutEvidence = milestones.filter((m) => !m.milestone.evidence && m.milestone.status !== 'UPCOMING');
+  // Evidence can be attached to any milestone that doesn't have it yet, at any
+  // point — it should never require first going through Simulation and
+  // advancing a project's clock just to get a milestone off UPCOMING.
+  const withoutEvidence = milestones.filter((m) => !m.milestone.evidence);
 
   return (
     <div className="space-y-6 pb-10">
