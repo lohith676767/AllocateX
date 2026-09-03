@@ -1,3 +1,4 @@
+import { pathToFileURL } from 'node:url';
 import { prisma } from '../db/client.js';
 
 export interface TierSpec {
@@ -360,7 +361,10 @@ async function createProject(input: {
   });
 }
 
-const isMainModule = process.argv[1] && import.meta.url === `file://${process.argv[1]}`;
+// Compare via pathToFileURL rather than a manual `file://` template so this
+// also works on Windows, where process.argv[1] uses backslashes and
+// import.meta.url is a properly-escaped file:// URL.
+const isMainModule = Boolean(process.argv[1]) && import.meta.url === pathToFileURL(process.argv[1] as string).href;
 
 if (isMainModule) {
   seedDatabase()
