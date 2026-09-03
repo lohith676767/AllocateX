@@ -1,6 +1,6 @@
 import { prisma } from '../../db/client.js';
 import { ApiError } from '../../utils/errors.js';
-import { TOTAL_CSR_POOL } from '../../config/fairfillConfig.js';
+import { EPSILON, TOTAL_CSR_POOL } from '../../config/fairfillConfig.js';
 import { AuditEvents, logAudit } from '../audit.js';
 import { calculateUnderservice } from './underservice.js';
 import { calculateGeographicalEquity } from './equity.js';
@@ -22,16 +22,33 @@ export interface RunFairFillResult {
 }
 
 /**
- * Orchestrates a full FairFill run:
+ * Orchestrates a FairFill run:
  *   Evidence -> underservice + equity scoring (per region)
  *            -> Layer 1 max-min water-filling (regional caps)
  *            -> Layer 2 marginal tiered allocation (per region, per project)
  *            -> PROPOSED Allocation records (never auto-approved)
+ *
+ * Re-runnable: funds already APPROVED/RELEASED in an earlier run are treated
+ * as sunk and never revisited (their projects have moved out of PROPOSED
+ * status, so they're structurally excluded from re-scoring). Layer 1 only
+ * ever water-fills the *residual* pool (TOTAL_CSR_POOL minus what's already
+ * committed) across currently-PROPOSED projects — e.g. ones added via a data
+ * import after an earlier run's allocations were approved — so the running
+ * total across every run can never exceed the fixed CSR pool.
  */
 export async function runFairFill(): Promise<RunFairFillResult> {
-  const alreadyCommitted = await prisma.allocation.count({ where: { status: { in: ['APPROVED', 'RELEASED'] } } });
-  if (alreadyCommitted > 0) {
-    throw ApiError.conflict('FairFill has already been run and funds approved this scenario. Reset the demo to run it again.');
+  const committedAllocations = await prisma.allocation.findMany({
+    where: { status: { in: ['APPROVED', 'RELEASED'] } },
+  });
+  const totalCommitted = committedAllocations.reduce((sum, a) => sum + a.amount, 0);
+  const committedByRegion = new Map<string, number>();
+  for (const a of committedAllocations) {
+    committedByRegion.set(a.regionId, (committedByRegion.get(a.regionId) ?? 0) + a.amount);
+  }
+
+  const residualPool = TOTAL_CSR_POOL - totalCommitted;
+  if (residualPool <= EPSILON) {
+    throw ApiError.conflict('The full CSR pool has already been committed to approved allocations. Reset the demo to run again.');
   }
 
   // Clear any stale PROPOSED allocations from a prior (unapproved) run.
@@ -92,6 +109,10 @@ export async function runFairFill(): Promise<RunFairFillResult> {
     where: { status: 'PROPOSED' },
     include: { tiers: { orderBy: { order: 'asc' } }, ngo: true, region: true },
   });
+
+  if (eligibleProjects.length === 0) {
+    throw ApiError.conflict('No proposed projects are awaiting allocation. Import new project data or reset the demo to run again.');
+  }
 
   interface ScoredProject {
     id: string;
@@ -155,18 +176,22 @@ export async function runFairFill(): Promise<RunFairFillResult> {
     demand: scoredProjects.filter((p) => p.regionId === region.id).reduce((sum, p) => sum + p.requestedBudget, 0),
   }));
 
-  const waterFill = maxMinWaterFill(TOTAL_CSR_POOL, demands);
+  const waterFill = maxMinWaterFill(residualPool, demands);
 
   for (const cap of waterFill.caps) {
+    const committed = committedByRegion.get(cap.regionId) ?? 0;
     await prisma.region.update({
       where: { id: cap.regionId },
-      data: { budgetCap: cap.cap, budgetDemand: cap.demand },
+      // budgetCap is the region's total ever-allocatable share: funds already
+      // committed in an earlier run, plus this run's fresh water-filled share
+      // of whatever remains of the pool.
+      data: { budgetCap: Math.round((committed + cap.cap) * 100) / 100, budgetDemand: cap.demand },
     });
   }
 
   await logAudit(
     AuditEvents.REGIONAL_ALLOCATION_CREATED,
-    `Layer 1 max-min water-filling allocated ₹${TOTAL_CSR_POOL.toLocaleString('en-IN')} across ${waterFill.caps.length} regions based on regional demand.`
+    `Layer 1 max-min water-filling allocated ₹${residualPool.toLocaleString('en-IN')} of residual CSR pool across ${waterFill.caps.length} regions based on regional demand.`
   );
 
   // ── Layer 2: marginal tiered allocation per region ──
