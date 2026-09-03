@@ -1,0 +1,183 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────
+// EVIDENCE LAYER
+// ─────────────────────────────────────────────────────────────
+
+model Region {
+  id                      String   @id @default(cuid())
+  name                    String
+  state                   String
+  population              Int
+  peerGroup               String
+  domain                  String
+  needIndex               Float
+  underserviceScore       Float    @default(0)
+  geographicalEquityScore Float    @default(0)
+  historicalCSR           Float
+  serviceLevel            Float    @default(0)
+  benchmarkServiceLevel   Float    @default(1)
+  budgetDemand            Float    @default(0)
+  budgetCap               Float?
+  allocatedAmount         Float    @default(0)
+
+  indicators  RegionIndicator[]
+  ngos        NGO[]
+  projects    Project[]
+  allocations Allocation[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model RegionIndicator {
+  id             String @id @default(cuid())
+  regionId       String
+  region         Region @relation(fields: [regionId], references: [id], onDelete: Cascade)
+  key            String
+  label          String
+  regionalValue  Float
+  benchmarkValue Float
+  weight         Float   @default(0)
+  lowerIsWorse   Boolean @default(true)
+  gap            Float   @default(0)
+}
+
+model NGO {
+  id                String    @id @default(cuid())
+  name              String
+  regionId          String
+  region            Region    @relation(fields: [regionId], references: [id])
+  trustMultiplier   Float
+  projectsCompleted Int       @default(0)
+  projectsDelayed   Int       @default(0)
+  projectsFailed    Int       @default(0)
+  projects          Project[]
+}
+
+// ─────────────────────────────────────────────────────────────
+// ALLOCATION LAYER
+// ─────────────────────────────────────────────────────────────
+
+model Project {
+  id          String @id @default(cuid())
+  name        String
+  ngoId       String
+  ngo         NGO    @relation(fields: [ngoId], references: [id])
+  regionId    String
+  region      Region @relation(fields: [regionId], references: [id])
+  domain      String
+  description String
+
+  requestedBudget   Float
+  impactUnits       Float
+  impactPerRupee    Float @default(0)
+  underserviceScore Float @default(0)
+  equityScore       Float @default(0)
+  trustMultiplier   Float @default(1)
+  finalScore        Float @default(0)
+
+  status                String @default("DRAFT")
+  completionPercentage  Float  @default(0)
+  currentSimulatedMonth Int    @default(0)
+  salvageThreshold      Float  @default(0.6)
+  fundedAmount          Float  @default(0)
+  isConcave             Boolean @default(true)
+  isComparisonHighlight String? // "IMPACT_ONLY" | "FAIRFILL_WINNER" | null
+  isDemoFeature         String? // "SUCCESS" | "EXTERNAL_DEPENDENCY" | "SELF_FAILURE" | null
+
+  lastSalvageDecision String?
+  lastSalvageReason   String?
+
+  tiers        ProjectTier[]
+  milestones   Milestone[]
+  allocations  Allocation[]
+  reallocationsAsSource      Reallocation[] @relation("SourceProject")
+  reallocationsAsDestination Reallocation[] @relation("DestinationProject")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model ProjectTier {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  order     Int
+  amount    Float
+  impact    Float
+  fundedAmount Float @default(0)
+}
+
+model Milestone {
+  id                 String   @id @default(cuid())
+  projectId          String
+  project            Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name               String
+  dueMonth           Int
+  order              Int      @default(0)
+  type               String
+  expectedCompletion Float
+  actualCompletion   Float?
+  status             String   @default("UPCOMING")
+  evidence           Evidence?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Evidence {
+  id                String    @id @default(cuid())
+  milestoneId       String    @unique
+  milestone         Milestone @relation(fields: [milestoneId], references: [id], onDelete: Cascade)
+  filename          String
+  description       String
+  simulatedLocation String
+  timestamp         DateTime  @default(now())
+}
+
+model Allocation {
+  id        String  @id @default(cuid())
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id])
+  regionId  String
+  region    Region  @relation(fields: [regionId], references: [id])
+  amount    Float
+  reason    String
+  score     Float
+  status    String  @default("PROPOSED")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Reallocation {
+  id                   String  @id @default(cuid())
+  sourceProjectId      String
+  sourceProject        Project @relation("SourceProject", fields: [sourceProjectId], references: [id])
+  destinationProjectId String
+  destinationProject   Project @relation("DestinationProject", fields: [destinationProjectId], references: [id])
+  amount               Float
+  reason               String
+  destinationScore     Float
+  explanation          String
+  status               String  @default("PROPOSED")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model AuditEvent {
+  id        String   @id @default(cuid())
+  event     String
+  actor     String
+  details   String
+  timestamp DateTime @default(now())
+}

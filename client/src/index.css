@@ -1,0 +1,39 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-ink-950 text-mist-100 antialiased;
+  font-feature-settings: 'ss01' on, 'ss02' on;
+}
+
+::selection {
+  background: rgba(45, 212, 191, 0.25);
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #1a2333;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #26324a;
+}
+
+.card {
+  @apply rounded-xl border border-ink-700/70 bg-ink-850/80 shadow-card backdrop-blur-sm;
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
