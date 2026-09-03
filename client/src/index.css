@@ -3,16 +3,17 @@
 @tailwind utilities;
 
 html {
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 body {
-  @apply bg-ink-950 text-mist-100 antialiased;
-  font-feature-settings: 'ss01' on, 'ss02' on;
+  @apply bg-stone-50 text-stone-900 antialiased;
+  font-feature-settings: 'ss01' on, 'cv11' on;
+  -webkit-font-smoothing: antialiased;
 }
 
 ::selection {
-  background: rgba(45, 212, 191, 0.25);
+  background: rgba(76, 91, 199, 0.16);
 }
 
 ::-webkit-scrollbar {
@@ -23,17 +24,30 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #1a2333;
+  background: theme('colors.stone.300');
   border-radius: 8px;
+  border: 2px solid theme('colors.stone.50');
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #26324a;
+  background: theme('colors.stone.400');
 }
 
-.card {
-  @apply rounded-xl border border-ink-700/70 bg-ink-850/80 shadow-card backdrop-blur-sm;
+:focus-visible {
+  outline: 2px solid theme('colors.accent.500');
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
-.tabular-nums {
-  font-variant-numeric: tabular-nums;
+@layer components {
+  .card {
+    @apply rounded-lg border border-stone-200 bg-white shadow-card;
+  }
+
+  .tabular-nums {
+    font-variant-numeric: tabular-nums;
+  }
+
+  .label-caps {
+    @apply text-[11px] font-medium uppercase tracking-wide text-stone-500;
+  }
 }

@@ -192,7 +192,7 @@ export async function submitEvidence(
   const evidence = await prisma.evidence.upsert({
     where: { milestoneId },
     create: { milestoneId, ...input },
-    update: { ...input, timestamp: new Date() },
+    update: { ...input, reviewStatus: 'SUBMITTED', timestamp: new Date() },
   });
 
   await logAudit(
@@ -201,6 +201,29 @@ export async function submitEvidence(
   );
 
   return evidence;
+}
+
+const EVIDENCE_REVIEW_STATUSES = ['REVIEWED', 'FLAGGED'];
+
+/** A human reviewer marking evidence — evidence is never auto-verified. */
+export async function reviewEvidence(evidenceId: string, status: 'REVIEWED' | 'FLAGGED') {
+  if (!EVIDENCE_REVIEW_STATUSES.includes(status)) {
+    throw ApiError.badRequest(`Invalid review status: ${status}`);
+  }
+  const evidence = await prisma.evidence.findUnique({
+    where: { id: evidenceId },
+    include: { milestone: { include: { project: true } } },
+  });
+  if (!evidence) throw ApiError.notFound('Evidence not found');
+
+  const updated = await prisma.evidence.update({ where: { id: evidenceId }, data: { reviewStatus: status } });
+
+  await logAudit(
+    AuditEvents.EVIDENCE_REVIEWED,
+    `Evidence for milestone "${evidence.milestone.name}" on "${evidence.milestone.project.name}" marked ${status.toLowerCase()} by a human reviewer.`
+  );
+
+  return updated;
 }
 
 function chainTransition(from: ProjectState, hops: ProjectState[]): ProjectState {

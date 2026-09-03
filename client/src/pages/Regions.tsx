@@ -20,15 +20,15 @@ export default function Regions() {
       <EquityMap regions={regions.data!} />
 
       <div className="card overflow-x-auto p-0">
-        <table className="w-full text-left text-sm">
+        <table className="w-full text-left text-[13px]">
           <thead>
-            <tr className="border-b border-ink-700 text-[11px] uppercase tracking-wider text-mist-400">
+            <tr className="border-b border-stone-200 text-[10.5px] uppercase tracking-wider text-stone-400">
               <th className="px-4 py-3 font-medium">Region</th>
               <th className="px-4 py-3 font-medium">Domain</th>
-              <th className="px-4 py-3 font-medium">Underservice</th>
-              <th className="px-4 py-3 font-medium">Equity</th>
-              <th className="px-4 py-3 font-medium">Regional Cap</th>
-              <th className="px-4 py-3 font-medium">Allocated</th>
+              <th className="px-4 py-3 text-right font-medium">Underservice</th>
+              <th className="px-4 py-3 text-right font-medium">Equity</th>
+              <th className="px-4 py-3 text-right font-medium">Regional Cap</th>
+              <th className="px-4 py-3 text-right font-medium">Allocated</th>
             </tr>
           </thead>
           <tbody>
@@ -36,17 +36,19 @@ export default function Regions() {
               <tr
                 key={r.id}
                 onClick={() => navigate(`/regions/${r.id}`)}
-                className="cursor-pointer border-b border-ink-800 last:border-0 hover:bg-ink-800/50"
+                className="cursor-pointer border-b border-stone-100 last:border-0 hover:bg-stone-50"
               >
                 <td className="px-4 py-3">
-                  <p className="font-medium text-mist-100">{r.name}</p>
-                  <p className="text-xs text-mist-400">{r.state}</p>
+                  <p className="font-medium text-stone-900">{r.name}</p>
+                  <p className="text-[11.5px] text-stone-500">{r.state}</p>
                 </td>
-                <td className="px-4 py-3 text-mist-300">{r.domain.replace('_', ' ')}</td>
-                <td className="px-4 py-3 tabular-nums text-mist-300">{formatPct(r.underserviceScore * 100)}</td>
-                <td className="px-4 py-3 tabular-nums text-mist-300">{formatPct(r.geographicalEquityScore * 100)}</td>
-                <td className="px-4 py-3 tabular-nums text-mist-300">{r.budgetCap !== null ? formatINR(r.budgetCap, { compact: true }) : '—'}</td>
-                <td className="px-4 py-3 tabular-nums text-mist-300">{formatINR(r.allocatedAmount, { compact: true })}</td>
+                <td className="px-4 py-3 text-stone-600">{r.domain.replace('_', ' ')}</td>
+                <td className="px-4 py-3 text-right tabular-nums text-stone-700">{formatPct(r.underserviceScore * 100)}</td>
+                <td className="px-4 py-3 text-right tabular-nums text-stone-700">{formatPct(r.geographicalEquityScore * 100)}</td>
+                <td className="px-4 py-3 text-right tabular-nums text-stone-700">
+                  {r.budgetCap !== null ? formatINR(r.budgetCap, { compact: true }) : '—'}
+                </td>
+                <td className="px-4 py-3 text-right tabular-nums text-stone-700">{formatINR(r.allocatedAmount, { compact: true })}</td>
               </tr>
             ))}
           </tbody>

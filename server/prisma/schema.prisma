@@ -140,6 +140,7 @@ model Evidence {
   filename          String
   description       String
   simulatedLocation String
+  reviewStatus      String    @default("SUBMITTED") // SUBMITTED | REVIEWED | FLAGGED — set only by a human reviewer
   timestamp         DateTime  @default(now())
 }
 

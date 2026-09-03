@@ -10,7 +10,7 @@ import {
   postJumpSimulation,
   postRewindSimulation,
 } from '../controllers/simulationController.js';
-import { postCompleteMilestone, postMilestoneEvidence } from '../controllers/milestoneController.js';
+import { postCompleteMilestone, postMilestoneEvidence, postReviewEvidence } from '../controllers/milestoneController.js';
 import {
   listReallocations,
   postApproveReallocation,
@@ -45,6 +45,7 @@ router.post('/simulation/:projectId/fail-milestone', postFailMilestone);
 
 router.post('/milestones/:id/complete', postCompleteMilestone);
 router.post('/milestones/:id/evidence', postMilestoneEvidence);
+router.post('/evidence/:id/review', postReviewEvidence);
 
 router.get('/reallocations', listReallocations);
 router.post('/reallocations/:id/approve', postApproveReallocation);

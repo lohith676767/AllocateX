@@ -3,7 +3,7 @@ import {
   AlertOctagon,
   CheckCircle2,
   FastForward,
-  FileImage,
+  FileCheck2,
   Rewind,
   SkipForward,
   StepForward,
@@ -94,22 +94,20 @@ export default function Simulation() {
     <div className="space-y-6 pb-10">
       <PageHeader title="Simulation" subtitle="The judge controls the project clock directly — this is simulated time, never real elapsed time." />
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[280px_1fr_320px]">
-        <div className="card max-h-[70vh] overflow-y-auto p-2">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[260px_1fr_300px]">
+        <div className="card max-h-[70vh] overflow-y-auto p-1.5">
           {simulatable.map((sp) => (
             <button
               key={sp.id}
               onClick={() => navigate(`/simulation/${sp.id}`)}
-              className={`flex w-full flex-col gap-1 rounded-lg px-3 py-2.5 text-left transition-colors ${
-                sp.id === id ? 'bg-signal-teal/10' : 'hover:bg-ink-800'
+              className={`flex w-full flex-col gap-1 rounded-md px-3 py-2.5 text-left transition-colors ${
+                sp.id === id ? 'bg-accent-50' : 'hover:bg-stone-50'
               }`}
             >
-              <div className="flex items-center justify-between gap-2">
-                <span className={`truncate text-xs font-medium ${sp.id === id ? 'text-signal-teal' : 'text-mist-200'}`}>{sp.name}</span>
-              </div>
+              <span className={`truncate text-[12.5px] font-medium ${sp.id === id ? 'text-accent-700' : 'text-stone-700'}`}>{sp.name}</span>
               <div className="flex items-center gap-2">
                 <StatusBadge status={sp.status} small />
-                <span className="text-[10px] text-mist-400">M{sp.currentSimulatedMonth}</span>
+                <span className="text-[10.5px] text-stone-400">M{sp.currentSimulatedMonth}</span>
               </div>
             </button>
           ))}
@@ -121,25 +119,25 @@ export default function Simulation() {
           <div className="card p-6">
             <div className="flex items-start justify-between">
               <div>
-                <h2 className="text-base font-semibold text-mist-100">{p.name}</h2>
-                <p className="mt-0.5 text-xs text-mist-400">{p.region?.name}</p>
+                <h2 className="text-[15px] font-semibold text-stone-900">{p.name}</h2>
+                <p className="mt-0.5 text-[12px] text-stone-500">{p.region?.name}</p>
               </div>
               <StatusBadge status={p.status} />
             </div>
 
-            <div className="mt-4 flex items-center gap-6">
+            <div className="mt-5 flex flex-wrap items-center gap-x-8 gap-y-3">
               <div>
-                <p className="text-[10px] uppercase tracking-wider text-mist-400">Simulated time</p>
-                <p className="text-2xl font-bold tabular-nums text-mist-100">Month {p.currentSimulatedMonth}</p>
+                <p className="label-caps">Simulation clock</p>
+                <p className="text-[26px] font-semibold tabular-nums tracking-tight text-stone-900">Month {p.currentSimulatedMonth}</p>
               </div>
               <div>
-                <p className="text-[10px] uppercase tracking-wider text-mist-400">Completion</p>
-                <p className="text-2xl font-bold tabular-nums text-mist-100">{formatPct(p.completionPercentage)}</p>
+                <p className="label-caps">Completion</p>
+                <p className="text-[26px] font-semibold tabular-nums text-stone-900">{formatPct(p.completionPercentage)}</p>
               </div>
               <div>
-                <p className="text-[10px] uppercase tracking-wider text-mist-400">Funding</p>
-                <p className="text-2xl font-bold tabular-nums text-mist-100">
-                  {formatINR(p.fundedAmount, { compact: true })} <span className="text-sm text-mist-400">/ {formatINR(p.requestedBudget, { compact: true })}</span>
+                <p className="label-caps">Funding</p>
+                <p className="text-[26px] font-semibold tabular-nums text-stone-900">
+                  {formatINR(p.fundedAmount, { compact: true })} <span className="text-[14px] text-stone-400">/ {formatINR(p.requestedBudget, { compact: true })}</span>
                 </p>
               </div>
             </div>
@@ -147,12 +145,12 @@ export default function Simulation() {
             {p.milestones && p.milestones.length > 0 && <ProjectTimeline milestones={p.milestones} currentMonth={p.currentSimulatedMonth} />}
 
             {currentMilestone && (
-              <div className="mt-2 rounded-lg border border-ink-700 bg-ink-800/40 p-4">
+              <div className="mt-1 rounded-lg border border-stone-200 bg-stone-50/60 p-4">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium text-mist-100">Current milestone: {currentMilestone.name}</p>
+                  <p className="text-[13px] font-medium text-stone-900">Current milestone: {currentMilestone.name}</p>
                   <StatusBadge status={currentMilestone.status} small />
                 </div>
-                <div className="mt-2 flex items-center gap-6 text-xs text-mist-400">
+                <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-[11.5px] text-stone-500">
                   <span>Due Month {currentMilestone.dueMonth}</span>
                   <span>{currentMilestone.type === 'EXTERNAL_DEPENDENCY' ? 'External dependency' : 'Self-controlled'}</span>
                   <span>Expected {formatPct(currentMilestone.expectedCompletion * 100)}</span>
@@ -160,15 +158,15 @@ export default function Simulation() {
                 </div>
                 <button
                   onClick={() => setEvidenceTarget(currentMilestone)}
-                  className="mt-3 flex items-center gap-1.5 text-xs font-medium text-signal-blue hover:opacity-80"
+                  className="mt-3 flex items-center gap-1.5 text-[12px] font-medium text-accent-600 hover:opacity-80"
                 >
-                  <FileImage size={13} /> Attach evidence
+                  <FileCheck2 size={13} /> Attach evidence
                 </button>
               </div>
             )}
 
             {p.status === 'UNDER_REVIEW' && (
-              <div className="mt-3 flex items-center gap-2 rounded-lg border border-signal-amber/30 bg-signal-amber/5 px-4 py-3 text-xs text-signal-amber">
+              <div className="mt-3 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50/70 px-4 py-3 text-[12px] text-amber-800">
                 <AlertOctagon size={14} />
                 Paused for human review — no penalty has been applied. Resolve externally, then resume manually.
               </div>
@@ -176,41 +174,44 @@ export default function Simulation() {
             {p.status === 'REALLOCATION_PROPOSED' && (
               <button
                 onClick={() => navigate('/reallocations')}
-                className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-signal-amber/40 bg-signal-amber/5 px-4 py-3 text-xs font-medium text-signal-amber hover:bg-signal-amber/10"
+                className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-amber-200 bg-amber-50/70 px-4 py-3 text-[12px] font-medium text-amber-800 hover:bg-amber-50"
               >
                 <AlertOctagon size={14} /> Reallocation proposed — review in Reallocations
               </button>
             )}
 
-            <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3">
-              <ControlButton icon={Rewind} label="Previous Month" onClick={() => rewind.mutate()} disabled={busy || p.currentSimulatedMonth === 0} />
-              <ControlButton icon={StepForward} label="Advance 1 Month" onClick={() => advance.mutate(1)} disabled={busy} />
-              <ControlButton icon={FastForward} label="Advance 3 Months" onClick={() => advance.mutate(3)} disabled={busy} />
-              <ControlButton icon={SkipForward} label="Jump to Next Milestone" onClick={() => jump.mutate()} disabled={busy} />
-              <ControlButton
-                icon={CheckCircle2}
-                label="Complete Current Milestone"
-                onClick={() => currentMilestone && completeMilestone.mutate(currentMilestone.id)}
-                disabled={busy || !canAct || !currentMilestone}
-                accent="teal"
-              />
-              <ControlButton
-                icon={AlertOctagon}
-                label="Simulate Failure"
-                onClick={() => failMilestone.mutate()}
-                disabled={busy || !canAct || !currentMilestone}
-                accent="rose"
-              />
+            <div className="mt-6 border-t border-stone-100 pt-5">
+              <p className="label-caps mb-3">Simulation controls</p>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                <ControlButton icon={Rewind} label="Previous Month" onClick={() => rewind.mutate()} disabled={busy || p.currentSimulatedMonth === 0} />
+                <ControlButton icon={StepForward} label="Advance 1 Month" onClick={() => advance.mutate(1)} disabled={busy} />
+                <ControlButton icon={FastForward} label="Advance 3 Months" onClick={() => advance.mutate(3)} disabled={busy} />
+                <ControlButton icon={SkipForward} label="Next Milestone" onClick={() => jump.mutate()} disabled={busy} />
+                <ControlButton
+                  icon={CheckCircle2}
+                  label="Complete Milestone"
+                  onClick={() => currentMilestone && completeMilestone.mutate(currentMilestone.id)}
+                  disabled={busy || !canAct || !currentMilestone}
+                  accent="success"
+                />
+                <ControlButton
+                  icon={AlertOctagon}
+                  label="Simulate Failure"
+                  onClick={() => failMilestone.mutate()}
+                  disabled={busy || !canAct || !currentMilestone}
+                  accent="danger"
+                />
+              </div>
             </div>
           </div>
         )}
 
         <div className="card p-4">
-          <p className="mb-3 text-xs font-semibold uppercase tracking-wider text-mist-400">Live Event Feed</p>
+          <p className="label-caps mb-3">Live event stream</p>
           {audit.data && audit.data.length > 0 ? (
             <AuditFeed events={audit.data.slice(0, 40)} />
           ) : (
-            <p className="text-xs text-mist-400">No events yet.</p>
+            <p className="text-[12px] text-stone-400">No events yet.</p>
           )}
         </div>
       </div>
@@ -231,21 +232,21 @@ function ControlButton({
   label: string;
   onClick: () => void;
   disabled?: boolean;
-  accent?: 'teal' | 'rose';
+  accent?: 'success' | 'danger';
 }) {
   return (
     <button
       onClick={onClick}
       disabled={disabled}
-      className={`flex flex-col items-center gap-1.5 rounded-lg border px-3 py-3 text-center text-[11px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
-        accent === 'teal'
-          ? 'border-signal-teal/30 text-signal-teal hover:bg-signal-teal/10'
-          : accent === 'rose'
-            ? 'border-signal-rose/30 text-signal-rose hover:bg-signal-rose/10'
-            : 'border-ink-600 text-mist-300 hover:bg-ink-800'
+      className={`flex flex-col items-center gap-1.5 rounded-md border px-3 py-3 text-center text-[11px] font-medium transition-colors disabled:cursor-not-allowed disabled:opacity-40 ${
+        accent === 'success'
+          ? 'border-emerald-200 text-emerald-700 hover:bg-emerald-50'
+          : accent === 'danger'
+            ? 'border-rose-200 text-rose-700 hover:bg-rose-50'
+            : 'border-stone-200 text-stone-600 hover:bg-stone-50'
       }`}
     >
-      <Icon size={16} />
+      <Icon size={15} />
       {label}
     </button>
   );

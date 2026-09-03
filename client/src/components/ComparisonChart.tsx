@@ -12,32 +12,32 @@ export default function ComparisonChart({ rows }: { rows: ComparisonRow[] }) {
   return (
     <div className="card p-6">
       <div className="flex items-baseline justify-between">
-        <h2 className="text-sm font-semibold text-mist-100">Allocation comparison</h2>
-        <span className="text-[10px] uppercase tracking-wider text-mist-400">Illustrative comparison using current demo scenario</span>
+        <h2 className="text-[14px] font-semibold text-stone-900">Allocation comparison</h2>
+        <span className="label-caps">Illustrative comparison using current demo scenario</span>
       </div>
-      <p className="mt-1 text-xs text-mist-400">
+      <p className="mt-1 text-[12.5px] text-stone-500">
         A naive impact-only allocator funds the highest raw impact-per-rupee projects nationwide with no regional
         fairness constraint. FairFill's actual allocation is shown alongside it.
       </p>
       <div className="mt-4 h-72 w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#1a2333" vertical={false} />
-            <XAxis dataKey="name" tick={{ fill: '#7c8aa5', fontSize: 11 }} axisLine={{ stroke: '#26324a' }} tickLine={false} />
+          <BarChart data={data} margin={{ top: 8, right: 8, left: 0, bottom: 8 }} barGap={4}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#E7E5E4" vertical={false} />
+            <XAxis dataKey="name" tick={{ fill: '#78716c', fontSize: 11 }} axisLine={{ stroke: '#E7E5E4' }} tickLine={false} />
             <YAxis
-              tick={{ fill: '#7c8aa5', fontSize: 11 }}
+              tick={{ fill: '#78716c', fontSize: 11 }}
               axisLine={false}
               tickLine={false}
               tickFormatter={(v) => formatINR(v, { compact: true })}
             />
             <Tooltip
               formatter={(v: number) => formatINR(v)}
-              contentStyle={{ background: '#111826', border: '1px solid #26324a', borderRadius: 8, fontSize: 12 }}
-              labelStyle={{ color: '#e4e8f0' }}
+              contentStyle={{ background: '#ffffff', border: '1px solid #E7E5E4', borderRadius: 8, fontSize: 12 }}
+              labelStyle={{ color: '#1c1917', fontWeight: 600 }}
             />
-            <Legend wrapperStyle={{ fontSize: 11, color: '#9fabc2' }} />
-            <Bar dataKey="Impact-only (traditional)" fill="#3a4a68" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="FairFill (fairness + equity + impact)" fill="#2dd4bf" radius={[4, 4, 0, 0]} />
+            <Legend wrapperStyle={{ fontSize: 11, color: '#57534e' }} />
+            <Bar dataKey="Impact-only (traditional)" fill="#D6D3D1" radius={[3, 3, 0, 0]} />
+            <Bar dataKey="FairFill (fairness + equity + impact)" fill="#4c5bc7" radius={[3, 3, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>

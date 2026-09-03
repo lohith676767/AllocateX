@@ -32,6 +32,9 @@ export const STATUS_LABELS: Record<string, string> = {
   RELEASED: 'Released',
   UPCOMING: 'Upcoming',
   MISSED: 'Missed',
+  SUBMITTED: 'Pending Review',
+  REVIEWED: 'Reviewed',
+  FLAGGED: 'Flagged',
 };
 
 export const STATUS_TONE: Record<string, 'neutral' | 'positive' | 'warning' | 'danger' | 'info'> = {
@@ -51,6 +54,9 @@ export const STATUS_TONE: Record<string, 'neutral' | 'positive' | 'warning' | 'd
   RELEASED: 'positive',
   UPCOMING: 'neutral',
   MISSED: 'danger',
+  SUBMITTED: 'warning',
+  REVIEWED: 'positive',
+  FLAGGED: 'danger',
 };
 
 export function timeAgo(iso: string): string {

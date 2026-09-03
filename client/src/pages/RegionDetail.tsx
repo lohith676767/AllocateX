@@ -7,6 +7,12 @@ import { ErrorState, LoadingState } from '../components/StateViews';
 import { formatINR, formatPct } from '../lib/format';
 import { api } from '../services/api';
 
+function historicalFundingLabel(equityScore: number): string {
+  if (equityScore >= 0.66) return 'Low relative to need';
+  if (equityScore >= 0.33) return 'Moderate relative to need';
+  return 'High relative to need';
+}
+
 export default function RegionDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -21,7 +27,7 @@ export default function RegionDetail() {
 
   return (
     <div className="space-y-6 pb-10">
-      <button onClick={() => navigate('/regions')} className="flex items-center gap-1.5 text-xs text-mist-400 hover:text-mist-100">
+      <button onClick={() => navigate('/regions')} className="flex items-center gap-1.5 text-[12px] text-stone-500 hover:text-stone-900">
         <ArrowLeft size={13} /> Back to regions
       </button>
 
@@ -30,26 +36,52 @@ export default function RegionDetail() {
         subtitle={`${r.state} · ${r.domain.replace('_', ' ')} · Population ${r.population.toLocaleString('en-IN')} · Peer group: ${r.peerGroup}`}
       />
 
+      <div className="card flex flex-wrap">
+        <div className="flex flex-col gap-1 border-r border-stone-200 px-5 py-4">
+          <span className="label-caps">Need index</span>
+          <span className="text-[20px] font-semibold tabular-nums text-stone-900">{r.needIndex}</span>
+        </div>
+        <div className="flex flex-col gap-1 border-r border-stone-200 px-5 py-4">
+          <span className="label-caps">Historical CSR / need</span>
+          <span className="text-[15px] font-semibold text-stone-900">{historicalFundingLabel(r.geographicalEquityScore)}</span>
+        </div>
+        <div className="flex flex-col gap-1 border-r border-stone-200 px-5 py-4">
+          <span className="label-caps">FairFill allocation</span>
+          <span className="text-[20px] font-semibold tabular-nums text-stone-900">{formatINR(r.allocatedAmount, { compact: true })}</span>
+        </div>
+        <div className="flex flex-col gap-1 border-r border-stone-200 px-5 py-4">
+          <span className="label-caps">Equity gap</span>
+          <span className={`text-[20px] font-semibold tabular-nums ${(equity?.relativeFundingGapPct ?? 0) >= 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
+            {(equity?.relativeFundingGapPct ?? 0) >= 0 ? '+' : ''}
+            {formatPct(equity?.relativeFundingGapPct ?? 0)}
+          </span>
+        </div>
+        <div className="flex flex-col gap-1 px-5 py-4">
+          <span className="label-caps">Projects</span>
+          <span className="text-[20px] font-semibold tabular-nums text-stone-900">{r.projects?.length ?? 0}</span>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="card p-6">
           <div className="flex items-baseline justify-between">
-            <h2 className="text-sm font-semibold text-mist-100">Why this underservice score?</h2>
-            <span className="text-2xl font-bold tabular-nums text-signal-rose">{formatPct((under?.score ?? r.underserviceScore) * 100)}</span>
+            <h2 className="text-[13.5px] font-semibold text-stone-900">Why this underservice score?</h2>
+            <span className="text-[22px] font-semibold tabular-nums text-rose-600">{formatPct((under?.score ?? r.underserviceScore) * 100)}</span>
           </div>
-          <p className="mt-1 text-xs text-mist-400">
+          <p className="mt-1 text-[12px] text-stone-500">
             Calculated mathematically from authoritative indicator evidence — never self-reported by NGOs.
           </p>
           <div className="mt-4 space-y-3">
             {(under?.contributors ?? []).map((c) => (
               <div key={c.key}>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-mist-300">{indicatorLabel(c.key)}</span>
-                  <span className="tabular-nums text-mist-400">
+                <div className="flex items-center justify-between text-[12px]">
+                  <span className="text-stone-600">{indicatorLabel(c.key)}</span>
+                  <span className="tabular-nums text-stone-400">
                     {c.regionalValue} / benchmark {c.benchmarkValue} → gap {formatPct(c.gap * 100)}
                   </span>
                 </div>
-                <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-ink-700">
-                  <div className="h-full rounded-full bg-signal-rose" style={{ width: `${c.gap * 100}%` }} />
+                <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-stone-100">
+                  <div className="h-full rounded-full bg-rose-400" style={{ width: `${c.gap * 100}%` }} />
                 </div>
               </div>
             ))}
@@ -58,24 +90,24 @@ export default function RegionDetail() {
 
         <div className="card p-6">
           <div className="flex items-baseline justify-between">
-            <h2 className="text-sm font-semibold text-mist-100">Why this geographical equity score?</h2>
-            <span className="text-2xl font-bold tabular-nums text-signal-violet">{formatPct((equity?.score ?? r.geographicalEquityScore) * 100)}</span>
+            <h2 className="text-[13.5px] font-semibold text-stone-900">Why this geographical equity score?</h2>
+            <span className="text-[22px] font-semibold tabular-nums text-accent-600">{formatPct((equity?.score ?? r.geographicalEquityScore) * 100)}</span>
           </div>
-          <p className="mt-1 text-xs text-mist-400">
+          <p className="mt-1 text-[12px] text-stone-500">
             Funding relative to need, compared against the peer-group average — not simply "less money in, more money out".
           </p>
-          <dl className="mt-4 space-y-2.5 text-xs">
-            <div className="flex justify-between border-b border-ink-800 pb-2">
-              <dt className="text-mist-400">Historical CSR / need (this region)</dt>
-              <dd className="tabular-nums text-mist-100">₹{Math.round(equity?.fundingPerNeed ?? 0).toLocaleString('en-IN')}</dd>
+          <dl className="mt-4 space-y-2.5 text-[12px]">
+            <div className="flex justify-between border-b border-stone-100 pb-2">
+              <dt className="text-stone-500">Historical CSR / need (this region)</dt>
+              <dd className="tabular-nums text-stone-900">₹{Math.round(equity?.fundingPerNeed ?? 0).toLocaleString('en-IN')}</dd>
             </div>
-            <div className="flex justify-between border-b border-ink-800 pb-2">
-              <dt className="text-mist-400">Peer-group average</dt>
-              <dd className="tabular-nums text-mist-100">₹{Math.round(equity?.peerAverageFundingPerNeed ?? 0).toLocaleString('en-IN')}</dd>
+            <div className="flex justify-between border-b border-stone-100 pb-2">
+              <dt className="text-stone-500">Peer-group average</dt>
+              <dd className="tabular-nums text-stone-900">₹{Math.round(equity?.peerAverageFundingPerNeed ?? 0).toLocaleString('en-IN')}</dd>
             </div>
             <div className="flex justify-between">
-              <dt className="text-mist-400">Relative funding gap</dt>
-              <dd className={`tabular-nums font-semibold ${(equity?.relativeFundingGapPct ?? 0) > 0 ? 'text-signal-teal' : 'text-signal-rose'}`}>
+              <dt className="text-stone-500">Relative funding gap</dt>
+              <dd className={`tabular-nums font-semibold ${(equity?.relativeFundingGapPct ?? 0) > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
                 {(equity?.relativeFundingGapPct ?? 0) > 0 ? 'Underfunded by ' : 'Overfunded by '}
                 {formatPct(Math.abs(equity?.relativeFundingGapPct ?? 0))}
               </dd>
@@ -86,20 +118,20 @@ export default function RegionDetail() {
 
       <div className="card p-6">
         <div className="flex items-baseline justify-between">
-          <h2 className="text-sm font-semibold text-mist-100">Projects in {r.name}</h2>
-          <span className="text-xs text-mist-400">
+          <h2 className="text-[13.5px] font-semibold text-stone-900">Projects in {r.name}</h2>
+          <span className="text-[12px] text-stone-500">
             {formatINR(r.allocatedAmount, { compact: true })} allocated of {r.budgetCap !== null ? formatINR(r.budgetCap, { compact: true }) : '—'} cap
           </span>
         </div>
-        <div className="mt-4 divide-y divide-ink-800">
+        <div className="mt-4 divide-y divide-stone-100">
           {(r.projects ?? []).map((p) => (
-            <Link key={p.id} to={`/projects/${p.id}`} className="flex items-center justify-between gap-4 py-3 hover:opacity-80">
+            <Link key={p.id} to={`/projects/${p.id}`} className="flex items-center justify-between gap-4 py-3 hover:opacity-70">
               <div className="min-w-0">
-                <p className="truncate text-sm text-mist-100">{p.name}</p>
-                <p className="text-xs text-mist-400">{p.ngo?.name}</p>
+                <p className="truncate text-[13px] text-stone-900">{p.name}</p>
+                <p className="text-[11.5px] text-stone-500">{p.ngo?.name}</p>
               </div>
               <div className="flex shrink-0 items-center gap-3">
-                <span className="text-xs tabular-nums text-mist-300">
+                <span className="text-[12px] tabular-nums text-stone-600">
                   {formatINR(p.fundedAmount, { compact: true })} / {formatINR(p.requestedBudget, { compact: true })}
                 </span>
                 <StatusBadge status={p.status} small />

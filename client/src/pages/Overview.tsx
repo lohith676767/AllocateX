@@ -1,15 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
-import { Coins, Landmark, PlayCircle, ScrollText, Sparkles, TrendingUp, Users2, Wallet, Zap } from 'lucide-react';
+import { ArrowRight, PlayCircle, Zap } from 'lucide-react';
 import { useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import AllocationFlow from '../components/AllocationFlow';
 import ComparisonChart from '../components/ComparisonChart';
 import MetricCard from '../components/MetricCard';
-import PageHeader from '../components/PageHeader';
 import { ErrorState, LoadingState } from '../components/StateViews';
 import WhyFairFill from '../components/WhyFairFill';
 import { useApiErrorToast, useToast } from '../hooks/useToast';
-import { formatINR, formatPct, formatScore } from '../lib/format';
+import { formatINR, formatScore } from '../lib/format';
 import { api } from '../services/api';
 import type { RunFairFillResult } from '../types';
 
@@ -33,9 +32,9 @@ export default function Overview() {
     onSuccess: (data) => {
       setRunResult(data);
       queryClient.invalidateQueries();
-      push('success', 'FairFill run complete', `Regional caps computed across ${data.waterFill.caps.length} regions.`);
+      push('success', 'Allocation generated', `Regional caps computed across ${data.waterFill.caps.length} regions.`);
     },
-    onError: (err) => onError(err, 'FairFill run failed'),
+    onError: (err) => onError(err, 'Allocation generation failed'),
   });
 
   // Reconstruct a displayable result from persisted data if the page was reloaded
@@ -99,40 +98,51 @@ export default function Overview() {
 
   return (
     <div className="space-y-6 pb-10">
-      <PageHeader
-        title="Overview"
-        subtitle="Fund where impact is high. Protect where need is highest."
-        actions={
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-[24px] font-semibold tracking-tight text-stone-900">FairFill</h1>
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-stone-200 bg-stone-50 px-2 py-0.5 text-[11px] font-medium text-stone-500">
+              <span className={`h-1.5 w-1.5 rounded-full ${d.fairFillHasRun ? 'bg-emerald-500' : 'bg-stone-300'}`} />
+              {d.fairFillHasRun ? 'Allocation engine operational' : 'Awaiting first allocation'}
+            </span>
+          </div>
+          <p className="mt-1 text-[13px] text-stone-500">
+            Equitable CSR allocation engine — fund where impact is high, protect where need is highest.
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          {d.fairFillHasRun && (
+            <Link
+              to="/allocations"
+              className="flex items-center gap-1.5 rounded-md border border-stone-200 px-3.5 py-2 text-[13px] font-medium text-stone-700 hover:bg-stone-50"
+            >
+              Review Proposal <ArrowRight size={14} />
+            </Link>
+          )}
           <button
             onClick={() => runMutation.mutate()}
             disabled={runMutation.isPending}
-            className="flex items-center gap-2 rounded-lg bg-signal-teal px-4 py-2 text-sm font-semibold text-ink-950 transition-opacity hover:opacity-90 disabled:opacity-60"
+            className="flex items-center gap-2 rounded-md bg-accent-600 px-3.5 py-2 text-[13px] font-semibold text-white transition-colors hover:bg-accent-700 disabled:opacity-60"
           >
-            {runMutation.isPending ? <Zap size={16} className="animate-pulse" /> : <PlayCircle size={16} />}
-            {runMutation.isPending ? 'Running FairFill…' : 'Run FairFill'}
+            {runMutation.isPending ? <Zap size={14} className="animate-pulse" /> : <PlayCircle size={14} />}
+            {runMutation.isPending ? 'Generating…' : 'Generate Allocation'}
           </button>
-        }
-      />
+        </div>
+      </div>
 
-      <motion.div
-        initial="hidden"
-        animate="visible"
-        variants={{ visible: { transition: { staggerChildren: 0.05 } } }}
-        className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-5"
-      >
-        <MetricCard label="Total CSR Pool" value={d.totalPool} formatter={(v) => formatINR(v, { compact: true })} icon={Wallet} accent="blue" />
-        <MetricCard label="Allocated" value={d.allocated} formatter={(v) => formatINR(v, { compact: true })} icon={Coins} accent="teal" />
-        <MetricCard label="Remaining" value={d.remaining} formatter={(v) => formatINR(v, { compact: true })} icon={Landmark} accent="violet" />
-        <MetricCard label="Regions Served" value={d.regionsServed} formatter={(v) => `${Math.round(v)}/${d.totalRegions}`} icon={Users2} accent="amber" />
-        <MetricCard label="Projects Funded" value={d.projectsFunded} formatter={(v) => `${Math.round(v)}/${d.totalProjects}`} icon={ScrollText} accent="teal" />
-        <MetricCard label="Avg Impact / ₹1L" value={d.avgImpactPerRupee} formatter={(v) => formatScore(v)} icon={TrendingUp} accent="blue" />
-        <MetricCard label="Equity Improvement" value={d.equityImprovementPct} formatter={(v) => formatPct(v)} icon={Sparkles} accent="violet" />
-        <MetricCard label="Active Projects" value={d.activeProjects} formatter={(v) => `${Math.round(v)}`} icon={Zap} accent="amber" />
-        <MetricCard label="Pending Approvals" value={d.pendingApprovals} formatter={(v) => `${Math.round(v)}`} icon={ScrollText} accent="rose" />
-      </motion.div>
+      <div className="card flex flex-wrap">
+        <MetricCard label="CSR Pool" value={d.totalPool} formatter={(v) => formatINR(v, { compact: true })} emphasis />
+        <MetricCard label="Allocated" value={d.allocated} formatter={(v) => formatINR(v, { compact: true })} emphasis />
+        <MetricCard label="Remaining" value={d.remaining} formatter={(v) => formatINR(v, { compact: true })} emphasis />
+        <MetricCard label="Avg FairFill Score" value={d.avgFairFillScore} formatter={(v) => formatScore(v)} />
+        <MetricCard label="Regions Served" value={d.regionsServed} formatter={(v) => `${Math.round(v)}/${d.totalRegions}`} />
+        <MetricCard label="Active Projects" value={d.activeProjects} formatter={(v) => `${Math.round(v)}`} />
+        <MetricCard label="Pending Approvals" value={d.pendingApprovals} formatter={(v) => `${Math.round(v)}`} />
+      </div>
 
       <div>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-mist-400">FairFill Allocation Flow</h2>
+        <h2 className="mb-3 text-[13px] font-semibold text-stone-700">FairFill Allocation Flow</h2>
         <AllocationFlow result={derivedResult} />
       </div>
 

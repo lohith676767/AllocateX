@@ -6,7 +6,6 @@ import { EmptyState, ErrorState, LoadingState } from '../components/StateViews';
 import { useApiErrorToast, useToast } from '../hooks/useToast';
 import { formatINR, formatScore } from '../lib/format';
 import { api } from '../services/api';
-import type { Allocation } from '../types';
 
 export default function Allocations() {
   const queryClient = useQueryClient();
@@ -18,10 +17,9 @@ export default function Allocations() {
 
   const approve = useMutation({
     mutationFn: api.approveAllocation,
-    onSuccess: (_, id) => {
+    onSuccess: () => {
       invalidate();
       push('success', 'Allocation approved', 'Funds released to the project.');
-      void id;
     },
     onError: (err) => onError(err, 'Approval failed'),
   });
@@ -41,52 +39,97 @@ export default function Allocations() {
   const rows = allocations.data!;
   const proposed = rows.filter((a) => a.status === 'PROPOSED');
   const resolved = rows.filter((a) => a.status !== 'PROPOSED');
+  const busy = approve.isPending || reject.isPending;
 
   return (
     <div className="space-y-6 pb-10">
       <PageHeader title="Allocations" subtitle="Every proposed allocation requires explicit human approval before funds move." />
 
       <div>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-mist-400">
-          Pending approval {proposed.length > 0 && <span className="text-signal-amber">({proposed.length})</span>}
+        <h2 className="mb-3 flex items-center gap-2 text-[13px] font-semibold text-stone-700">
+          Pending approval
+          {proposed.length > 0 && (
+            <span className="rounded-full bg-amber-100 px-1.5 py-0.5 text-[11px] font-semibold text-amber-700">{proposed.length}</span>
+          )}
         </h2>
         {proposed.length === 0 ? (
-          <EmptyState title="Nothing pending" description="Run FairFill to generate proposed allocations, or all proposals have already been resolved." />
+          <EmptyState title="Nothing pending" description="Generate an allocation to produce proposals, or all proposals have already been resolved." />
         ) : (
-          <div className="space-y-3">
-            {proposed.map((a) => (
-              <AllocationRow
-                key={a.id}
-                a={a}
-                onApprove={() => approve.mutate(a.id)}
-                onReject={() => reject.mutate(a.id)}
-                busy={approve.isPending || reject.isPending}
-              />
-            ))}
+          <div className="card overflow-x-auto p-0">
+            <table className="w-full text-left text-[13px]">
+              <thead>
+                <tr className="border-b border-stone-200 text-[10.5px] uppercase tracking-wider text-stone-400">
+                  <th className="px-4 py-3 font-medium">Project</th>
+                  <th className="px-4 py-3 font-medium">Region</th>
+                  <th className="px-4 py-3 font-medium">Reason</th>
+                  <th className="px-4 py-3 text-right font-medium">Amount</th>
+                  <th className="px-4 py-3 text-right font-medium">FairFill Score</th>
+                  <th className="px-4 py-3 font-medium">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {proposed.map((a) => (
+                  <tr key={a.id} className="border-b border-stone-100 last:border-0">
+                    <td className="px-4 py-3">
+                      <p className="font-medium text-stone-900">{a.project?.name}</p>
+                    </td>
+                    <td className="px-4 py-3 text-stone-600">{a.region?.name}</td>
+                    <td className="max-w-xs px-4 py-3 text-[11.5px] leading-snug text-stone-500">{a.reason}</td>
+                    <td className="px-4 py-3 text-right tabular-nums text-stone-700">{formatINR(a.amount, { compact: true })}</td>
+                    <td className="px-4 py-3 text-right tabular-nums font-semibold text-accent-600">{formatScore(a.score)}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => approve.mutate(a.id)}
+                          disabled={busy}
+                          className="flex items-center gap-1 rounded-md bg-accent-600 px-2.5 py-1.5 text-[11.5px] font-semibold text-white hover:bg-accent-700 disabled:opacity-60"
+                        >
+                          <Check size={12} /> Approve
+                        </button>
+                        <button
+                          onClick={() => reject.mutate(a.id)}
+                          disabled={busy}
+                          className="flex items-center gap-1 rounded-md border border-stone-200 px-2.5 py-1.5 text-[11.5px] font-medium text-stone-600 hover:border-rose-200 hover:text-rose-700 disabled:opacity-60"
+                        >
+                          <X size={12} /> Reject
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </div>
 
       <div>
-        <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-mist-400">History</h2>
+        <h2 className="mb-3 text-[13px] font-semibold text-stone-700">History</h2>
         <div className="card overflow-x-auto p-0">
-          <table className="w-full text-left text-sm">
+          <table className="w-full text-left text-[13px]">
             <thead>
-              <tr className="border-b border-ink-700 text-[11px] uppercase tracking-wider text-mist-400">
+              <tr className="border-b border-stone-200 text-[10.5px] uppercase tracking-wider text-stone-400">
                 <th className="px-4 py-3 font-medium">Project</th>
                 <th className="px-4 py-3 font-medium">Region</th>
-                <th className="px-4 py-3 font-medium">Amount</th>
-                <th className="px-4 py-3 font-medium">Score</th>
+                <th className="px-4 py-3 text-right font-medium">Amount</th>
+                <th className="px-4 py-3 text-right font-medium">Score</th>
                 <th className="px-4 py-3 font-medium">Status</th>
               </tr>
             </thead>
             <tbody>
+              {resolved.length === 0 && (
+                <tr>
+                  <td colSpan={5} className="px-4 py-8 text-center text-[12px] text-stone-400">
+                    No resolved allocations yet.
+                  </td>
+                </tr>
+              )}
               {resolved.map((a) => (
-                <tr key={a.id} className="border-b border-ink-800 last:border-0">
-                  <td className="px-4 py-3 text-mist-100">{a.project?.name}</td>
-                  <td className="px-4 py-3 text-mist-300">{a.region?.name}</td>
-                  <td className="px-4 py-3 tabular-nums text-mist-300">{formatINR(a.amount, { compact: true })}</td>
-                  <td className="px-4 py-3 tabular-nums text-signal-teal">{formatScore(a.score)}</td>
+                <tr key={a.id} className="border-b border-stone-100 last:border-0">
+                  <td className="px-4 py-3 text-stone-900">{a.project?.name}</td>
+                  <td className="px-4 py-3 text-stone-600">{a.region?.name}</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-stone-700">{formatINR(a.amount, { compact: true })}</td>
+                  <td className="px-4 py-3 text-right tabular-nums text-accent-600">{formatScore(a.score)}</td>
                   <td className="px-4 py-3">
                     <StatusBadge status={a.status} small />
                   </td>
@@ -94,50 +137,6 @@ export default function Allocations() {
               ))}
             </tbody>
           </table>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function AllocationRow({
-  a,
-  onApprove,
-  onReject,
-  busy,
-}: {
-  a: Allocation;
-  onApprove: () => void;
-  onReject: () => void;
-  busy: boolean;
-}) {
-  return (
-    <div className="card flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
-      <div className="min-w-0">
-        <p className="text-sm font-medium text-mist-100">{a.project?.name}</p>
-        <p className="mt-0.5 text-xs text-mist-400">{a.region?.name}</p>
-        <p className="mt-1 max-w-xl text-[11px] leading-relaxed text-mist-400">{a.reason}</p>
-      </div>
-      <div className="flex shrink-0 items-center gap-4">
-        <div className="text-right">
-          <p className="text-sm font-semibold tabular-nums text-mist-100">{formatINR(a.amount, { compact: true })}</p>
-          <p className="text-[11px] tabular-nums text-signal-teal">score {formatScore(a.score)}</p>
-        </div>
-        <div className="flex gap-2">
-          <button
-            onClick={onApprove}
-            disabled={busy}
-            className="flex items-center gap-1 rounded-lg bg-signal-teal px-3 py-1.5 text-xs font-semibold text-ink-950 disabled:opacity-60"
-          >
-            <Check size={13} /> Approve
-          </button>
-          <button
-            onClick={onReject}
-            disabled={busy}
-            className="flex items-center gap-1 rounded-lg border border-ink-600 px-3 py-1.5 text-xs font-medium text-mist-300 hover:border-signal-rose/40 hover:text-signal-rose disabled:opacity-60"
-          >
-            <X size={13} /> Reject
-          </button>
         </div>
       </div>
     </div>

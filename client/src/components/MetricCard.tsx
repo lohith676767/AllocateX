@@ -1,11 +1,11 @@
-import { motion, useMotionValue, useSpring } from 'framer-motion';
+import { useMotionValue, useSpring } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
 import { useEffect, useRef } from 'react';
 
 function AnimatedNumber({ value, formatter }: { value: number; formatter: (v: number) => string }) {
   const ref = useRef<HTMLSpanElement>(null);
   const motionVal = useMotionValue(0);
-  const spring = useSpring(motionVal, { stiffness: 90, damping: 20, mass: 0.6 });
+  const spring = useSpring(motionVal, { stiffness: 110, damping: 22, mass: 0.6 });
 
   useEffect(() => {
     motionVal.set(value);
@@ -18,7 +18,11 @@ function AnimatedNumber({ value, formatter }: { value: number; formatter: (v: nu
     return unsub;
   }, [spring, formatter]);
 
-  return <span ref={ref} className="tabular-nums">{formatter(0)}</span>;
+  return (
+    <span ref={ref} className="tabular-nums">
+      {formatter(0)}
+    </span>
+  );
 }
 
 export default function MetricCard({
@@ -26,39 +30,27 @@ export default function MetricCard({
   value,
   formatter,
   icon: Icon,
-  accent = 'teal',
   sub,
+  emphasis = false,
 }: {
   label: string;
   value: number;
   formatter: (v: number) => string;
   icon?: LucideIcon;
-  accent?: 'teal' | 'amber' | 'rose' | 'violet' | 'blue';
   sub?: string;
+  /** Slightly larger figure for the metric(s) that matter most on the page. */
+  emphasis?: boolean;
 }) {
-  const accentClass = {
-    teal: 'text-signal-teal',
-    amber: 'text-signal-amber',
-    rose: 'text-signal-rose',
-    violet: 'text-signal-violet',
-    blue: 'text-signal-blue',
-  }[accent];
-
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.35 }}
-      className="card flex flex-col gap-3 p-5"
-    >
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-medium uppercase tracking-wider text-mist-400">{label}</span>
-        {Icon && <Icon size={16} className={accentClass} />}
+    <div className="flex flex-col gap-2 border-r border-stone-200 px-5 py-4 last:border-r-0 sm:first:pl-0">
+      <div className="flex items-center gap-1.5">
+        {Icon && <Icon size={12.5} strokeWidth={2.25} className="text-stone-400" />}
+        <span className="label-caps">{label}</span>
       </div>
-      <div className="text-2xl font-semibold text-mist-100">
+      <div className={`font-semibold text-stone-900 ${emphasis ? 'text-[26px] tracking-tight' : 'text-[20px]'}`}>
         <AnimatedNumber value={value} formatter={formatter} />
       </div>
-      {sub && <span className="text-xs text-mist-400">{sub}</span>}
-    </motion.div>
+      {sub && <span className="text-[11.5px] text-stone-500">{sub}</span>}
+    </div>
   );
 }

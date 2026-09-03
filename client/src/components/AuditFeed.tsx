@@ -3,16 +3,19 @@ import { clockTime } from '../lib/format';
 import type { AuditEvent } from '../types';
 
 const EVENT_COLORS: Record<string, string> = {
-  MILESTONE_MISSED: 'text-signal-rose',
-  MILESTONE_PAUSED_EXTERNAL: 'text-signal-amber',
-  SALVAGE_EVALUATED: 'text-signal-amber',
-  REALLOCATION_PROPOSED: 'text-signal-amber',
-  REALLOCATION_APPROVED: 'text-signal-teal',
-  REALLOCATION_REJECTED: 'text-signal-rose',
-  MILESTONE_COMPLETED: 'text-signal-teal',
-  ALLOCATION_APPROVED: 'text-signal-teal',
-  PROJECT_FUNDED: 'text-signal-teal',
-  DEMO_RESET: 'text-signal-blue',
+  MILESTONE_MISSED: 'text-rose-600',
+  MILESTONE_PAUSED_EXTERNAL: 'text-amber-600',
+  SALVAGE_EVALUATED: 'text-amber-600',
+  REALLOCATION_PROPOSED: 'text-amber-600',
+  REALLOCATION_APPROVED: 'text-emerald-600',
+  REALLOCATION_REJECTED: 'text-rose-600',
+  MILESTONE_COMPLETED: 'text-emerald-600',
+  ALLOCATION_APPROVED: 'text-emerald-600',
+  ALLOCATION_REJECTED: 'text-rose-600',
+  PROJECT_FUNDED: 'text-emerald-600',
+  DEMO_RESET: 'text-accent-600',
+  REGIONAL_ALLOCATION_CREATED: 'text-accent-600',
+  ALLOCATION_PROPOSED: 'text-accent-600',
 };
 
 export default function AuditFeed({ events, compact = true }: { events: AuditEvent[]; compact?: boolean }) {
@@ -22,16 +25,16 @@ export default function AuditFeed({ events, compact = true }: { events: AuditEve
         {events.map((e) => (
           <motion.div
             key={e.id}
-            initial={{ opacity: 0, x: -8 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.25 }}
-            className="border-b border-ink-800 py-2.5 font-mono text-[11px] last:border-0"
+            initial={{ opacity: 0, y: -6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.2 }}
+            className="border-b border-stone-100 py-2.5 text-[12px] last:border-0"
           >
-            <div className="flex items-center gap-2">
-              <span className="text-mist-400">{clockTime(e.timestamp)}</span>
-              <span className={`font-semibold ${EVENT_COLORS[e.event] ?? 'text-mist-300'}`}>{e.event}</span>
+            <div className="flex items-center gap-2 font-mono text-[10.5px]">
+              <span className="text-stone-400">{clockTime(e.timestamp)}</span>
+              <span className={`font-semibold ${EVENT_COLORS[e.event] ?? 'text-stone-500'}`}>{e.event}</span>
             </div>
-            <p className="mt-0.5 font-sans leading-relaxed text-mist-300">{e.details}</p>
+            <p className="mt-1 leading-relaxed text-stone-600">{e.details}</p>
           </motion.div>
         ))}
       </AnimatePresence>

@@ -1,10 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowRight, Check, X } from 'lucide-react';
+import { ArrowRight, Check, ChevronDown, X } from 'lucide-react';
+import { useState } from 'react';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
 import { EmptyState, ErrorState, LoadingState } from '../components/StateViews';
 import { useApiErrorToast, useToast } from '../hooks/useToast';
-import { formatINR, formatScore } from '../lib/format';
+import { formatINR, formatPct, formatScore } from '../lib/format';
 import { api } from '../services/api';
 import type { Reallocation } from '../types';
 
@@ -68,17 +69,17 @@ export default function Reallocations() {
 
       {resolved.length > 0 && (
         <div>
-          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-mist-400">History</h2>
-          <div className="card divide-y divide-ink-800 p-0">
+          <h2 className="mb-3 text-[13px] font-semibold text-stone-700">History</h2>
+          <div className="card divide-y divide-stone-100 p-0">
             {resolved.map((r) => (
-              <div key={r.id} className="flex items-center justify-between gap-4 px-4 py-3 text-sm">
+              <div key={r.id} className="flex items-center justify-between gap-4 px-4 py-3 text-[13px]">
                 <div className="flex min-w-0 items-center gap-2">
-                  <span className="truncate text-mist-200">{r.sourceProject?.name}</span>
-                  <ArrowRight size={12} className="shrink-0 text-mist-400" />
-                  <span className="truncate text-mist-200">{r.destinationProject?.name}</span>
+                  <span className="truncate text-stone-800">{r.sourceProject?.name}</span>
+                  <ArrowRight size={12} className="shrink-0 text-stone-400" />
+                  <span className="truncate text-stone-800">{r.destinationProject?.name}</span>
                 </div>
                 <div className="flex shrink-0 items-center gap-3">
-                  <span className="tabular-nums text-xs text-mist-400">{formatINR(r.amount, { compact: true })}</span>
+                  <span className="text-[12px] tabular-nums text-stone-500">{formatINR(r.amount, { compact: true })}</span>
                   <StatusBadge status={r.status} small />
                 </div>
               </div>
@@ -101,50 +102,89 @@ function ReallocationCard({
   onReject: () => void;
   busy: boolean;
 }) {
+  const [reviewed, setReviewed] = useState(false);
+  const completion = r.sourceProject?.completionPercentage ?? 0;
+  const threshold = (r.sourceProject?.salvageThreshold ?? 0.6) * 100;
+
   return (
-    <div className="card border-signal-amber/25 p-6">
-      <p className="text-[10px] font-semibold uppercase tracking-wider text-signal-amber">Reallocation Proposed</p>
-
-      <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-[1fr_auto_1fr]">
-        <div>
-          <p className="text-[10px] uppercase tracking-wider text-mist-400">Source</p>
-          <p className="text-sm font-semibold text-mist-100">{r.sourceProject?.name}</p>
-          <p className="mt-1 text-xs text-mist-400">Remaining ₹{Math.round(r.amount).toLocaleString('en-IN')}</p>
-        </div>
-        <div className="flex items-center justify-center text-mist-400">
-          <ArrowRight size={18} />
-        </div>
-        <div>
-          <p className="text-[10px] uppercase tracking-wider text-mist-400">Recommended destination</p>
-          <p className="text-sm font-semibold text-mist-100">{r.destinationProject?.name}</p>
-          <p className="mt-1 text-xs text-signal-teal">Destination score {formatScore(r.destinationScore)}</p>
+    <div className="card overflow-hidden">
+      <div className="border-b border-rose-100 bg-rose-50/50 px-6 py-4">
+        <p className="text-[10.5px] font-semibold uppercase tracking-wider text-rose-600">Milestone missed</p>
+        <p className="mt-1 text-[15px] font-semibold text-stone-900">{r.sourceProject?.name}</p>
+        <div className="mt-2 flex flex-wrap gap-x-6 gap-y-1 text-[12px] text-stone-600">
+          <span>
+            Cause: <span className="font-medium text-stone-800">Self-controlled</span>
+          </span>
+          <span>
+            Completion: <span className="font-medium text-rose-600">{formatPct(completion)}</span>
+          </span>
+          <span>
+            Salvage threshold: <span className="font-medium text-stone-800">{formatPct(threshold)}</span>
+          </span>
         </div>
       </div>
 
-      <div className="mt-4 rounded-lg border border-ink-700 bg-ink-800/40 p-3">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-mist-400">Reason</p>
-        <p className="mt-1 text-xs leading-relaxed text-mist-300">{r.reason}</p>
-      </div>
-      <div className="mt-2 rounded-lg border border-ink-700 bg-ink-800/40 p-3">
-        <p className="text-[10px] font-semibold uppercase tracking-wider text-mist-400">Why this destination</p>
-        <p className="mt-1 text-xs leading-relaxed text-mist-300">{r.explanation}</p>
-      </div>
+      <div className="px-6 py-4">
+        <div className="flex items-center gap-2">
+          <span className="rounded-md bg-amber-100 px-2 py-1 text-[11px] font-semibold text-amber-800">Recommendation</span>
+          <span className="text-[13px] font-semibold text-stone-900">Reallocation proposed</span>
+        </div>
 
-      <div className="mt-4 flex justify-end gap-2">
-        <button
-          onClick={onReject}
-          disabled={busy}
-          className="flex items-center gap-1.5 rounded-lg border border-ink-600 px-4 py-2 text-xs font-medium text-mist-300 hover:border-signal-rose/40 hover:text-signal-rose disabled:opacity-60"
-        >
-          <X size={13} /> Reject
-        </button>
-        <button
-          onClick={onApprove}
-          disabled={busy}
-          className="flex items-center gap-1.5 rounded-lg bg-signal-teal px-4 py-2 text-xs font-semibold text-ink-950 disabled:opacity-60"
-        >
-          <Check size={13} /> Approve &amp; Release
-        </button>
+        <div className="mt-4 flex flex-wrap items-center gap-4 rounded-lg border border-stone-200 bg-stone-50/60 p-4">
+          <div className="min-w-[140px]">
+            <p className="label-caps">Source</p>
+            <p className="text-[13px] font-medium text-stone-900">{r.sourceProject?.name}</p>
+            <p className="text-[16px] font-semibold tabular-nums text-stone-900">{formatINR(r.amount, { compact: true })} remaining</p>
+          </div>
+          <ArrowRight size={16} className="shrink-0 text-stone-400" />
+          <div className="min-w-[140px]">
+            <p className="label-caps">Reallocated</p>
+            <p className="text-[16px] font-semibold tabular-nums text-accent-600">{formatINR(r.amount, { compact: true })}</p>
+          </div>
+          <ArrowRight size={16} className="shrink-0 text-stone-400" />
+          <div className="min-w-[140px]">
+            <p className="label-caps">Candidate</p>
+            <p className="text-[13px] font-medium text-stone-900">{r.destinationProject?.name}</p>
+            <p className="text-[12px] tabular-nums text-emerald-600">FairFill Score {formatScore(r.destinationScore)}</p>
+          </div>
+        </div>
+
+        {!reviewed ? (
+          <button
+            onClick={() => setReviewed(true)}
+            className="mt-4 flex w-full items-center justify-center gap-1.5 rounded-md border border-stone-200 py-2.5 text-[12.5px] font-medium text-stone-700 hover:bg-stone-50"
+          >
+            Review Proposal <ChevronDown size={14} />
+          </button>
+        ) : (
+          <>
+            <div className="mt-4 rounded-lg border border-stone-200 bg-stone-50/40 p-3.5">
+              <p className="label-caps mb-1">Reason</p>
+              <p className="text-[12.5px] leading-relaxed text-stone-600">{r.reason}</p>
+            </div>
+            <div className="mt-2 rounded-lg border border-stone-200 bg-stone-50/40 p-3.5">
+              <p className="label-caps mb-1">Why this destination</p>
+              <p className="text-[12.5px] leading-relaxed text-stone-600">{r.explanation}</p>
+            </div>
+
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                onClick={onReject}
+                disabled={busy}
+                className="flex items-center gap-1.5 rounded-md border border-stone-200 px-4 py-2 text-[12.5px] font-medium text-stone-600 hover:border-rose-200 hover:text-rose-700 disabled:opacity-60"
+              >
+                <X size={13} /> Reject
+              </button>
+              <button
+                onClick={onApprove}
+                disabled={busy}
+                className="flex items-center gap-1.5 rounded-md bg-accent-600 px-4 py-2 text-[12.5px] font-semibold text-white hover:bg-accent-700 disabled:opacity-60"
+              >
+                <Check size={13} /> Approve Reallocation
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

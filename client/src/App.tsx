@@ -13,10 +13,10 @@ import Audit from './pages/Audit';
 
 export default function App() {
   return (
-    <div className="flex h-screen overflow-hidden bg-ink-950">
+    <div className="flex h-screen overflow-hidden bg-stone-50">
       <Sidebar />
       <main className="flex-1 overflow-y-auto">
-        <div className="mx-auto max-w-[1400px] px-8 py-7">
+        <div className="mx-auto max-w-[1360px] px-8 py-8 md:px-10">
           <Routes>
             <Route path="/" element={<Overview />} />
             <Route path="/regions" element={<Regions />} />

@@ -78,6 +78,7 @@ export interface Evidence {
   filename: string;
   description: string;
   simulatedLocation: string;
+  reviewStatus: 'SUBMITTED' | 'REVIEWED' | 'FLAGGED';
   timestamp: string;
 }
 
@@ -172,6 +173,7 @@ export interface DashboardData {
   projectsFunded: number;
   totalProjects: number;
   avgImpactPerRupee: number;
+  avgFairFillScore: number;
   equityImprovementPct: number;
   activeProjects: number;
   pendingApprovals: number;

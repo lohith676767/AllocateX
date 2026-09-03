@@ -31,13 +31,13 @@ const ITEMS = [
 export default function WhyFairFill() {
   return (
     <div className="card p-6">
-      <h2 className="text-sm font-semibold text-mist-100">Why FairFill?</h2>
-      <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <h2 className="text-[14px] font-semibold text-stone-900">Why FairFill</h2>
+      <div className="mt-4 grid grid-cols-1 gap-px overflow-hidden rounded-md border border-stone-200 bg-stone-200 sm:grid-cols-2 lg:grid-cols-5">
         {ITEMS.map(({ icon: Icon, title, body }) => (
-          <div key={title} className="flex flex-col gap-2 rounded-lg border border-ink-700 bg-ink-800/40 p-3.5">
-            <Icon size={16} className="text-signal-teal" />
-            <p className="text-xs font-semibold text-mist-100">{title}</p>
-            <p className="text-[11px] leading-relaxed text-mist-400">{body}</p>
+          <div key={title} className="flex flex-col gap-2 bg-white p-4">
+            <Icon size={15} strokeWidth={2} className="text-accent-600" />
+            <p className="text-[12.5px] font-semibold text-stone-900">{title}</p>
+            <p className="text-[11.5px] leading-relaxed text-stone-500">{body}</p>
           </div>
         ))}
       </div>

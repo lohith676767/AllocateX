@@ -214,6 +214,7 @@ All endpoints are prefixed with `/api`. Errors return `{ "error": "message", "de
 | POST | `/simulation/:projectId/fail-milestone` | `{ actualCompletion? }` — forces the current milestone to fail |
 | POST | `/milestones/:id/complete` | Marks a specific milestone complete |
 | POST | `/milestones/:id/evidence` | `{ filename, description, simulatedLocation }` |
+| POST | `/evidence/:id/review` | `{ status: 'REVIEWED' \| 'FLAGGED' }` — a human reviewer marking evidence; never automatic |
 | GET | `/reallocations` | All reallocation proposals |
 | POST | `/reallocations/:id/approve` | Approves & releases a reallocation |
 | POST | `/reallocations/:id/reject` | Rejects a reallocation |

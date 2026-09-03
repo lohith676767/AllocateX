@@ -3,6 +3,7 @@ import type {
   AuditEvent,
   ComparisonRow,
   DashboardData,
+  Evidence,
   FairFillConfig,
   Milestone,
   Project,
@@ -75,7 +76,9 @@ export const api = {
   submitEvidence: (
     milestoneId: string,
     payload: { filename: string; description: string; simulatedLocation: string }
-  ) => post(`/milestones/${milestoneId}/evidence`, payload),
+  ) => post<Evidence>(`/milestones/${milestoneId}/evidence`, payload),
+  reviewEvidence: (evidenceId: string, status: 'REVIEWED' | 'FLAGGED') =>
+    post<Evidence>(`/evidence/${evidenceId}/review`, { status }),
 
   listReallocations: () => request<Reallocation[]>('/reallocations'),
   approveReallocation: (id: string) => post<Reallocation>(`/reallocations/${id}/approve`),

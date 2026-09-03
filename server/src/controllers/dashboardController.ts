@@ -26,6 +26,9 @@ export const getDashboard = asyncHandler(async (_req: Request, res: Response) =>
   const avgImpactPerRupee = totalAllocated > 0 ? totalImpactUnits / totalAllocated : 0;
   const avgEquityScore = regions.length > 0 ? regions.reduce((s, r) => s + r.geographicalEquityScore, 0) / regions.length : 0;
 
+  const scoredProjects = projects.filter((p) => p.finalScore > 0);
+  const avgFairFillScore = scoredProjects.length > 0 ? scoredProjects.reduce((s, p) => s + p.finalScore, 0) / scoredProjects.length : 0;
+
   res.json({
     totalPool: TOTAL_CSR_POOL,
     allocated: round2(totalAllocated),
@@ -35,6 +38,7 @@ export const getDashboard = asyncHandler(async (_req: Request, res: Response) =>
     projectsFunded,
     totalProjects: projects.length,
     avgImpactPerRupee: round2(avgImpactPerRupee * 100_000),
+    avgFairFillScore: round2(avgFairFillScore),
     equityImprovementPct: round2(avgEquityScore * 100),
     activeProjects,
     pendingApprovals,
