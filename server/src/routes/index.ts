@@ -18,6 +18,7 @@ import {
 } from '../controllers/reallocationController.js';
 import { listAuditEvents } from '../controllers/auditController.js';
 import { postResetDemo } from '../controllers/demoController.js';
+import { postImportData } from '../controllers/importController.js';
 
 export const router = Router();
 
@@ -54,3 +55,4 @@ router.post('/reallocations/:id/reject', postRejectReallocation);
 router.get('/audit', listAuditEvents);
 
 router.post('/demo/reset', postResetDemo);
+router.post('/import', postImportData);

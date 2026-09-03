@@ -18,6 +18,7 @@ export const AuditEvents = {
   REALLOCATION_APPROVED: 'REALLOCATION_APPROVED',
   REALLOCATION_REJECTED: 'REALLOCATION_REJECTED',
   DEMO_RESET: 'DEMO_RESET',
+  DATA_IMPORTED: 'DATA_IMPORTED',
 } as const;
 
 export type AuditEventName = (typeof AuditEvents)[keyof typeof AuditEvents];

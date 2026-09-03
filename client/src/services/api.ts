@@ -87,4 +87,7 @@ export const api = {
   listAudit: () => request<AuditEvent[]>('/audit'),
 
   resetDemo: () => post<{ message: string }>('/demo/reset'),
+
+  importData: (payload: unknown) =>
+    post<{ message: string; regions: number; ngos: number; projects: number }>('/import', payload),
 };

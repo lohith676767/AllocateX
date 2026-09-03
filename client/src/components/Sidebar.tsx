@@ -9,8 +9,9 @@ import {
   RefreshCcw,
   Repeat,
   ScanEye,
+  Upload,
 } from 'lucide-react';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { api } from '../services/api';
 import { useApiErrorToast, useToast } from '../hooks/useToast';
@@ -76,6 +77,7 @@ export default function Sidebar() {
   const queryClient = useQueryClient();
   const { push } = useToast();
   const onError = useApiErrorToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const dashboard = useQuery({ queryKey: ['dashboard'], queryFn: api.getDashboard });
 
@@ -88,6 +90,27 @@ export default function Sidebar() {
     },
     onError: (err) => onError(err, 'Reset failed'),
   });
+
+  const importMutation = useMutation({
+    mutationFn: api.importData,
+    onSuccess: (result) => {
+      queryClient.invalidateQueries();
+      push('success', 'Import complete', `Added ${result.regions} region(s), ${result.ngos} NGO(s), ${result.projects} project(s).`);
+    },
+    onError: (err) => onError(err, 'Import failed'),
+  });
+
+  async function handleFileChosen(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      const payload = JSON.parse(await file.text());
+      importMutation.mutate(payload);
+    } catch {
+      push('error', 'Import failed', 'That file is not valid JSON.');
+    }
+  }
 
   const engineReady = dashboard.data?.fairFillHasRun;
 
@@ -125,9 +148,25 @@ export default function Sidebar() {
           {engineReady ? 'Allocation engine operational' : 'Awaiting first allocation run'}
         </div>
 
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json,.json"
+          className="hidden"
+          onChange={handleFileChosen}
+        />
+        <button
+          onClick={() => fileInputRef.current?.click()}
+          disabled={importMutation.isPending}
+          className="flex w-full items-center justify-center gap-1.5 rounded-md border border-stone-200 px-3 py-[7px] text-[12px] font-medium text-stone-600 transition-colors hover:border-accent-200 hover:bg-accent-50 hover:text-accent-700 disabled:opacity-60"
+        >
+          <Upload size={12} />
+          {importMutation.isPending ? 'Importing…' : 'Import Data'}
+        </button>
+
         <button
           onClick={() => setConfirmOpen(true)}
-          className="mt-3 flex w-full items-center justify-center gap-1.5 rounded-md border border-stone-200 px-3 py-[7px] text-[12px] font-medium text-stone-600 transition-colors hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700"
+          className="mt-2 flex w-full items-center justify-center gap-1.5 rounded-md border border-stone-200 px-3 py-[7px] text-[12px] font-medium text-stone-600 transition-colors hover:border-rose-200 hover:bg-rose-50 hover:text-rose-700"
         >
           <RefreshCcw size={12} />
           Reset Demo

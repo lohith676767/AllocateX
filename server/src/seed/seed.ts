@@ -1,13 +1,13 @@
 import { prisma } from '../db/client.js';
 
-interface TierSpec {
+export interface TierSpec {
   order: number;
   amount: number;
   impact: number;
 }
 
 /** Generates a standard 3-band concave tier curve: 40% budget -> 55% impact, 75% -> 85%, 100% -> 100%. */
-function standardTiers(totalAmount: number, totalImpact: number): TierSpec[] {
+export function standardTiers(totalAmount: number, totalImpact: number): TierSpec[] {
   return [
     { order: 1, amount: Math.round(totalAmount * 0.4), impact: Math.round(totalImpact * 0.55) },
     { order: 2, amount: Math.round(totalAmount * 0.75), impact: Math.round(totalImpact * 0.85) },
