@@ -12,11 +12,14 @@
     "dev:server": "npm run dev -w server",
     "dev:client": "npm run dev -w client",
     "build": "npm run build -w server && npm run build -w client",
+    "start": "node server/dist/index.js",
     "db:generate": "npm run db:generate -w server",
     "db:push": "npm run db:push -w server",
     "db:seed": "npm run db:seed -w server",
     "test": "npm run test -w server",
-    "setup": "npm install && npm run db:generate && npm run db:push && npm run db:seed"
+    "setup": "npm install && npm run db:generate && npm run db:push && npm run db:seed",
+    "deploy:build": "npm install && npm run db:generate && npm run build",
+    "deploy:start": "npm run db:push && npm run db:seed && npm run start"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
