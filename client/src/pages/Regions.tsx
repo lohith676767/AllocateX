@@ -1,7 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import EquityMap from '../components/EquityMap';
+import IndiaRegionMap from '../components/IndiaRegionMap';
 import PageHeader from '../components/PageHeader';
+import RegionDrawer from '../components/RegionDrawer';
 import { ErrorState, LoadingState } from '../components/StateViews';
 import { formatINR, formatPct } from '../lib/format';
 import { api } from '../services/api';
@@ -9,6 +12,7 @@ import { api } from '../services/api';
 export default function Regions() {
   const navigate = useNavigate();
   const regions = useQuery({ queryKey: ['regions'], queryFn: api.listRegions });
+  const [drawerRegionId, setDrawerRegionId] = useState<string | null>(null);
 
   if (regions.isLoading) return <LoadingState label="Loading regions…" />;
   if (regions.isError) return <ErrorState message="Could not load regions." onRetry={() => regions.refetch()} />;
@@ -16,6 +20,8 @@ export default function Regions() {
   return (
     <div className="space-y-6 pb-10">
       <PageHeader title="Regions" subtitle="Structural fairness and evidence-based need, by region." />
+
+      <IndiaRegionMap regions={regions.data!} onSelectRegion={setDrawerRegionId} />
 
       <EquityMap regions={regions.data!} />
 
@@ -54,6 +60,8 @@ export default function Regions() {
           </tbody>
         </table>
       </div>
+
+      <RegionDrawer regionId={drawerRegionId} onClose={() => setDrawerRegionId(null)} />
     </div>
   );
 }
