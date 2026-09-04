@@ -40,13 +40,27 @@ const DOMAIN_KEYWORDS: Record<string, string> = {
 export async function extractTextFromFile(buffer: Buffer, filename: string, mimetype: string): Promise<string> {
   const lower = filename.toLowerCase();
   if (lower.endsWith('.pdf') || mimetype === 'application/pdf') {
-    const result = await pdfParse(buffer);
-    return result.text;
+    try {
+      const result = await pdfParse(buffer);
+      return result.text;
+    } catch {
+      // pdf-parse bundles an old pdf.js build that can choke on certain
+      // real-world PDF producers (internal errors like "bad XRef entry" or
+      // "Illegal character") — surface a clear, actionable message instead
+      // of that raw parser stack trace.
+      throw ApiError.badRequest(
+        'Could not read this PDF — it may be corrupted, scanned/image-only, or use formatting this reader doesn\'t support. Try re-saving it, or upload it as a DOCX or plain text file instead.'
+      );
+    }
   }
   if (lower.endsWith('.docx') || mimetype.includes('officedocument.wordprocessingml')) {
-    const mammoth = await import('mammoth');
-    const result = await mammoth.extractRawText({ buffer });
-    return result.value;
+    try {
+      const mammoth = await import('mammoth');
+      const result = await mammoth.extractRawText({ buffer });
+      return result.value;
+    } catch {
+      throw ApiError.badRequest('Could not read this DOCX file — it may be corrupted. Try re-saving it, or upload it as plain text instead.');
+    }
   }
   return buffer.toString('utf-8');
 }
