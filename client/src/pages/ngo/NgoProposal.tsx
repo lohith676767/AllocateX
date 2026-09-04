@@ -1,7 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { motion } from 'framer-motion';
-import { CheckCircle2, LogOut, Scale, Search, UploadCloud } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { CheckCircle2, FileText, LogOut, Search, UploadCloud } from 'lucide-react';
 import { useMemo, useRef, useState } from 'react';
+import Logo from '../../components/Logo';
 import { useAuth } from '../../contexts/AuthContext';
 import { useApiErrorToast, useToast } from '../../hooks/useToast';
 import { formatINR } from '../../lib/format';
@@ -15,6 +16,22 @@ const STATUS_TONE: Record<string, string> = {
 };
 
 const DOMAINS = ['HEALTHCARE', 'WATER_SANITATION', 'EDUCATION'];
+const ALLOWED_EXTENSIONS = ['.pdf', '.docx', '.txt', '.md'];
+const MAX_FILE_BYTES = 8 * 1024 * 1024;
+
+function validateFile(file: File): string | null {
+  const lower = file.name.toLowerCase();
+  if (!ALLOWED_EXTENSIONS.some((ext) => lower.endsWith(ext))) {
+    return 'Unsupported file type — upload a PDF, DOCX, or plain text proposal.';
+  }
+  if (file.size > MAX_FILE_BYTES) {
+    return `File is too large (${(file.size / (1024 * 1024)).toFixed(1)}MB) — the limit is 8MB.`;
+  }
+  if (file.size === 0) {
+    return 'That file is empty.';
+  }
+  return null;
+}
 
 export default function NgoProposal() {
   const { user, logout } = useAuth();
@@ -23,11 +40,15 @@ export default function NgoProposal() {
   const onError = useApiErrorToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [step, setStep] = useState<'upload' | 'review'>('upload');
+  const [step, setStep] = useState<'upload' | 'review' | 'done'>('upload');
+  const [isDragging, setIsDragging] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
   const [filename, setFilename] = useState('');
   const [fields, setFields] = useState<ExtractedProposalFields | null>(null);
   const [selectedCompanyIds, setSelectedCompanyIds] = useState<string[]>([]);
   const [companySearch, setCompanySearch] = useState('');
+  const [lastSubmittedTo, setLastSubmittedTo] = useState<string[]>([]);
 
   const companies = useQuery({ queryKey: ['companies'], queryFn: api.listCompanies });
   const sent = useQuery({ queryKey: ['proposals', 'sent'], queryFn: api.listSentProposals });
@@ -39,27 +60,34 @@ export default function NgoProposal() {
   }, [companies.data, companySearch]);
 
   const previewMutation = useMutation({
-    mutationFn: (file: File) => api.previewProposal(file),
+    mutationFn: (file: File) => api.previewProposalWithProgress(file, setUploadProgress),
     onSuccess: (result) => {
       setFilename(result.filename);
       setFields(result.extracted);
       setStep('review');
     },
-    onError: (err) => onError(err, 'Could not read this document'),
+    onError: (err) => {
+      onError(err, 'Could not read this document');
+      setUploadProgress(null);
+    },
   });
 
   const submitMutation = useMutation({
     mutationFn: () => api.submitProposal(filename, fields!, selectedCompanyIds),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['proposals', 'sent'] });
-      push('success', 'Proposal submitted', 'The selected companies can now review it in their inbox.');
-      resetForm();
+      const names = companies.data?.filter((c) => selectedCompanyIds.includes(c.id)).map((c) => c.name) ?? [];
+      setLastSubmittedTo(names);
+      setStep('done');
     },
     onError: (err) => onError(err, 'Submission failed'),
   });
 
   function resetForm() {
     setStep('upload');
+    setIsDragging(false);
+    setUploadProgress(null);
+    setFileError(null);
     setFilename('');
     setFields(null);
     setSelectedCompanyIds([]);
@@ -69,6 +97,13 @@ export default function NgoProposal() {
 
   function handleFileChosen(file: File | undefined) {
     if (!file) return;
+    const validationError = validateFile(file);
+    if (validationError) {
+      setFileError(validationError);
+      return;
+    }
+    setFileError(null);
+    setUploadProgress(0);
     previewMutation.mutate(file);
   }
 
@@ -85,13 +120,14 @@ export default function NgoProposal() {
     submitMutation.mutate();
   }
 
+  const isUploading = previewMutation.isPending;
+  const isExtracting = isUploading && uploadProgress === 100;
+
   return (
     <div className="min-h-screen bg-stone-50">
       <header className="flex items-center justify-between border-b border-stone-200 bg-white px-6 py-4">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-7 w-7 items-center justify-center rounded-md bg-accent-600 text-white">
-            <Scale size={14} strokeWidth={2.2} />
-          </div>
+        <div className="flex items-center gap-3">
+          <Logo size="sm" withWordmark={false} />
           <div className="leading-tight">
             <p className="text-[14px] font-semibold text-stone-900">FairFill</p>
             <p className="text-[10.5px] uppercase tracking-wide text-stone-400">NGO Proposal Portal</p>
@@ -99,7 +135,12 @@ export default function NgoProposal() {
         </div>
         <div className="flex items-center gap-3">
           <div className="text-right leading-tight">
-            <p className="text-[12.5px] font-medium text-stone-800">{user?.name}</p>
+            <div className="flex items-center justify-end gap-1.5">
+              <p className="text-[12.5px] font-medium text-stone-800">{user?.name}</p>
+              <span className="rounded border border-accent-200 bg-accent-50 px-1 py-px text-[9px] font-semibold uppercase tracking-wide text-accent-700">
+                NGO
+              </span>
+            </div>
             <p className="text-[11px] text-stone-400">{user?.ngo?.name ?? user?.email}</p>
           </div>
           <button onClick={() => logout()} className="rounded-md p-2 text-stone-400 hover:bg-stone-100 hover:text-stone-700" aria-label="Log out">
@@ -127,17 +168,48 @@ export default function NgoProposal() {
               onChange={(e) => handleFileChosen(e.target.files?.[0])}
               className="hidden"
               id="proposal-file"
+              disabled={isUploading}
             />
             <label
               htmlFor="proposal-file"
-              className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-stone-200 px-4 py-8 text-center transition-colors hover:border-accent-300 hover:bg-accent-50/40"
+              onDragOver={(e) => {
+                e.preventDefault();
+                if (!isUploading) setIsDragging(true);
+              }}
+              onDragLeave={() => setIsDragging(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setIsDragging(false);
+                if (!isUploading) handleFileChosen(e.dataTransfer.files?.[0]);
+              }}
+              className={`flex flex-col items-center gap-2 rounded-lg border-2 border-dashed px-4 py-10 text-center transition-colors ${
+                isUploading ? 'cursor-wait border-stone-200 bg-stone-50' : 'cursor-pointer border-stone-200 hover:border-accent-300 hover:bg-accent-50/40'
+              } ${isDragging ? 'border-accent-400 bg-accent-50' : ''}`}
             >
-              <UploadCloud size={22} className="text-stone-400" />
-              <span className="text-[13px] font-medium text-stone-700">
-                {previewMutation.isPending ? 'Reading document…' : 'Click to choose a file'}
-              </span>
-              <span className="text-[11.5px] text-stone-400">PDF, DOCX, or plain text — up to 8MB</span>
+              {isUploading ? (
+                <div className="w-full max-w-[220px]">
+                  <p className="text-[13px] font-medium text-stone-700">{isExtracting ? 'Reading document…' : 'Uploading…'}</p>
+                  <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-stone-200">
+                    <motion.div
+                      className="h-full rounded-full bg-accent-600"
+                      animate={{ width: isExtracting ? '100%' : `${uploadProgress ?? 0}%` }}
+                      transition={{ ease: 'easeOut' }}
+                    />
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <UploadCloud size={22} className="text-stone-400" />
+                  <span className="text-[13px] font-medium text-stone-700">Drag a file here, or click to choose one</span>
+                  <span className="text-[11.5px] text-stone-400">PDF, DOCX, or plain text — up to 8MB</span>
+                </>
+              )}
             </label>
+            {fileError && (
+              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mt-2.5 text-[12px] text-rose-600">
+                {fileError}
+              </motion.p>
+            )}
           </div>
         )}
 
@@ -145,7 +217,9 @@ export default function NgoProposal() {
           <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} className="card space-y-5 p-6">
             <div className="flex items-center justify-between">
               <label className="label-caps block">2. Review extracted details</label>
-              <span className="text-[11px] text-stone-400">from {filename}</span>
+              <span className="flex items-center gap-1 text-[11px] text-stone-400">
+                <FileText size={11} /> {filename}
+              </span>
             </div>
             <p className="-mt-3 text-[11.5px] italic text-stone-500">{fields.note}</p>
 
@@ -262,6 +336,31 @@ export default function NgoProposal() {
           </motion.div>
         )}
 
+        <AnimatePresence>
+          {step === 'done' && (
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="card flex flex-col items-center p-8 text-center"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50">
+                <CheckCircle2 size={24} className="text-emerald-600" />
+              </div>
+              <h2 className="mt-4 text-[15px] font-semibold text-stone-900">Proposal submitted</h2>
+              <p className="mt-1.5 max-w-sm text-[12.5px] leading-relaxed text-stone-500">
+                Sent to {lastSubmittedTo.join(', ')}. You'll see its status update below as each company reviews it.
+              </p>
+              <button
+                onClick={resetForm}
+                className="mt-5 rounded-md bg-accent-600 px-4 py-2 text-[13px] font-semibold text-white hover:bg-accent-700"
+              >
+                Submit another proposal
+              </button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         <div>
           <h2 className="mb-3 text-[13px] font-semibold text-stone-700">Your submissions</h2>
           {sent.data?.length === 0 && <p className="text-[12.5px] text-stone-400">No proposals submitted yet.</p>}
@@ -279,7 +378,8 @@ export default function NgoProposal() {
                     <div className="min-w-0">
                       <p className="truncate text-[13.5px] font-semibold text-stone-900">{extracted.name}</p>
                       <p className="mt-0.5 text-[11.5px] text-stone-400">
-                        {p.filename} · {formatINR(extracted.requestedBudget, { compact: true })} requested
+                        {p.filename} · {formatINR(extracted.requestedBudget, { compact: true })} requested ·{' '}
+                        {new Date(p.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
                       </p>
                     </div>
                     <CheckCircle2 size={16} className="mt-0.5 shrink-0 text-emerald-500" />

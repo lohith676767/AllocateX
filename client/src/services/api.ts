@@ -29,6 +29,15 @@ export class ApiRequestError extends Error {
   }
 }
 
+// Set by AuthContext so any 401 from anywhere in the app — not just the
+// request that happened to trigger it — clears the session and (if the
+// user was actually logged in, not just failing a login attempt) surfaces
+// an "expired" message on the next Login render.
+let onUnauthorized: (() => void) | null = null;
+export function setUnauthorizedHandler(handler: (() => void) | null) {
+  onUnauthorized = handler;
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const isFormData = options?.body instanceof FormData;
   const res = await fetch(`${BASE}${path}`, {
@@ -46,6 +55,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     } catch {
       // ignore parse failure
     }
+    if (res.status === 401 && path !== '/auth/login') onUnauthorized?.();
     throw new ApiRequestError(res.status, message, details);
   }
   if (res.status === 204) return undefined as T;
@@ -108,6 +118,38 @@ export const api = {
     const form = new FormData();
     form.append('file', file);
     return request<{ filename: string; extracted: ExtractedProposalFields }>('/proposals/preview', { method: 'POST', body: form });
+  },
+  /**
+   * Same endpoint as previewProposal, but via XMLHttpRequest so real
+   * upload-progress events are available — fetch() has no cross-browser way
+   * to report request-body progress, only response-download progress.
+   */
+  previewProposalWithProgress: (file: File, onProgress: (pct: number) => void) => {
+    const form = new FormData();
+    form.append('file', file);
+    return new Promise<{ filename: string; extracted: ExtractedProposalFields }>((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `${BASE}/proposals/preview`);
+      xhr.withCredentials = true;
+      xhr.upload.onprogress = (e) => {
+        if (e.lengthComputable) onProgress(Math.round((e.loaded / e.total) * 100));
+      };
+      xhr.onload = () => {
+        let body: { error?: string; details?: unknown } & Partial<{ filename: string; extracted: ExtractedProposalFields }> = {};
+        try {
+          body = JSON.parse(xhr.responseText);
+        } catch {
+          // ignore parse failure — handled by the status check below
+        }
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve(body as { filename: string; extracted: ExtractedProposalFields });
+        } else {
+          reject(new ApiRequestError(xhr.status, body.error ?? xhr.statusText, body.details));
+        }
+      };
+      xhr.onerror = () => reject(new ApiRequestError(0, 'Network error while uploading the file.'));
+      xhr.send(form);
+    });
   },
   submitProposal: (filename: string, extracted: ExtractedProposalFields, companyIds: string[]) =>
     post<Proposal>('/proposals', { filename, extracted, companyIds }),

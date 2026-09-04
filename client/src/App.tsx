@@ -2,7 +2,7 @@ import { Route, Routes } from 'react-router-dom';
 import ProtectedRoute from './components/ProtectedRoute';
 import Sidebar from './components/Sidebar';
 import { useAuth } from './contexts/AuthContext';
-import { LoadingState } from './components/StateViews';
+import Splash from './pages/Splash';
 import Login from './pages/Login';
 import NgoProposal from './pages/ngo/NgoProposal';
 import Overview from './pages/Overview';
@@ -46,7 +46,7 @@ function CompanyApp() {
 export default function App() {
   const { isLoading } = useAuth();
 
-  if (isLoading) return <LoadingState label="Loading FairFill…" />;
+  if (isLoading) return <Splash />;
 
   return (
     <Routes>

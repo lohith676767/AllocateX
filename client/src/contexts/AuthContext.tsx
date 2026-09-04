@@ -1,10 +1,12 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { api } from '../services/api';
+import { api, setUnauthorizedHandler } from '../services/api';
 import type { AuthUser } from '../types';
 
 interface AuthContextValue {
   user: AuthUser | null;
   isLoading: boolean;
+  sessionExpired: boolean;
+  clearSessionExpired: () => void;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -14,6 +16,20 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [sessionExpired, setSessionExpired] = useState(false);
+
+  useEffect(() => {
+    // Only flags "expired" when a real session was lost mid-use (prev user
+    // was set) — the very first /auth/me check on a fresh page load also
+    // 401s for a logged-out visitor, and that's not an expiry to announce.
+    setUnauthorizedHandler(() => {
+      setUser((prev) => {
+        if (prev) setSessionExpired(true);
+        return null;
+      });
+    });
+    return () => setUnauthorizedHandler(null);
+  }, []);
 
   useEffect(() => {
     api
@@ -25,6 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async (email: string, password: string) => {
     const profile = await api.login(email, password);
+    setSessionExpired(false);
     setUser(profile);
   }, []);
 
@@ -36,7 +53,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  return <AuthContext.Provider value={{ user, isLoading, login, logout }}>{children}</AuthContext.Provider>;
+  const clearSessionExpired = useCallback(() => setSessionExpired(false), []);
+
+  return (
+    <AuthContext.Provider value={{ user, isLoading, sessionExpired, clearSessionExpired, login, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {

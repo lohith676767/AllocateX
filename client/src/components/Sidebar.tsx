@@ -16,6 +16,7 @@ import {
 import { useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import Logo from './Logo';
 import { api } from '../services/api';
 import { useApiErrorToast, useToast } from '../hooks/useToast';
 
@@ -121,19 +122,19 @@ export default function Sidebar() {
 
   return (
     <aside className="flex h-screen w-[232px] shrink-0 flex-col border-r border-stone-200 bg-white">
-      <div className="flex items-center gap-2.5 px-5 pb-5 pt-6">
-        <div className="flex h-7 w-7 items-center justify-center rounded-md bg-accent-600 text-[13px] font-bold text-white">
-          F
-        </div>
-        <div className="min-w-0 leading-tight">
-          <p className="text-[14px] font-semibold tracking-tight text-stone-900">FairFill</p>
-          <p className="text-[10px] font-medium uppercase tracking-wider text-stone-400">CSR Intelligence</p>
-        </div>
+      <div className="px-5 pb-5 pt-6">
+        <Logo size="sm" />
+        <p className="mt-1 pl-[38px] text-[10px] font-medium uppercase tracking-wider text-stone-400">CSR Intelligence</p>
       </div>
 
       <div className="flex items-center gap-2 border-y border-stone-100 bg-stone-50/60 px-5 py-2.5">
         <div className="min-w-0 flex-1 leading-tight">
-          <p className="truncate text-[12px] font-medium text-stone-800">{user?.name}</p>
+          <div className="flex items-center gap-1.5">
+            <p className="truncate text-[12px] font-medium text-stone-800">{user?.name}</p>
+            <span className="shrink-0 rounded border border-accent-200 bg-accent-50 px-1 py-px text-[9px] font-semibold uppercase tracking-wide text-accent-700">
+              {user?.role}
+            </span>
+          </div>
           <p className="truncate text-[10.5px] text-stone-400">{user?.companies?.[0]?.name ?? user?.email}</p>
         </div>
         <button onClick={() => logout()} aria-label="Log out" className="shrink-0 rounded-md p-1.5 text-stone-400 hover:bg-stone-100 hover:text-stone-700">

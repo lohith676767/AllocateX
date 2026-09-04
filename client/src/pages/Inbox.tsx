@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { Check, X } from 'lucide-react';
+import { ArrowRight, Check, X } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
 import { ErrorState, LoadingState } from '../components/StateViews';
@@ -8,6 +9,10 @@ import { useApiErrorToast, useToast } from '../hooks/useToast';
 import { formatINR } from '../lib/format';
 import { api } from '../services/api';
 import type { ExtractedProposalFields } from '../types';
+
+function formatDate(iso: string) {
+  return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
+}
 
 const STATUS_TONE: Record<string, string> = {
   PENDING: 'bg-amber-50 text-amber-700 border-amber-200',
@@ -66,7 +71,7 @@ export default function Inbox() {
                   </div>
                   <p className="mt-1 text-[12px] text-stone-500">
                     From <strong className="text-stone-700">{item.proposal.ngoUser.ngo?.name ?? item.proposal.ngoUser.name}</strong> ·
-                    Sent to {item.company.name} · {item.proposal.filename}
+                    Sent to {item.company.name} · {item.proposal.filename} · {formatDate(item.createdAt)}
                   </p>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
@@ -105,6 +110,15 @@ export default function Inbox() {
                     <X size={13} /> Reject
                   </button>
                 </div>
+              )}
+
+              {item.status === 'ACCEPTED' && (
+                <Link
+                  to="/"
+                  className="mt-4 flex w-fit items-center gap-1.5 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-[12.5px] font-medium text-emerald-700 hover:bg-emerald-100"
+                >
+                  Now a project — run FairFill to score it <ArrowRight size={13} />
+                </Link>
               )}
             </motion.div>
           );

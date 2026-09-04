@@ -1,12 +1,13 @@
 import { motion } from 'framer-motion';
-import { AlertCircle, Eye, EyeOff, Scale } from 'lucide-react';
+import { AlertCircle, Eye, EyeOff } from 'lucide-react';
 import { useState, type FormEvent } from 'react';
 import { Navigate } from 'react-router-dom';
+import Logo from '../components/Logo';
 import { useAuth } from '../contexts/AuthContext';
 import { ApiRequestError } from '../services/api';
 
 export default function Login() {
-  const { user, login } = useAuth();
+  const { user, login, sessionExpired, clearSessionExpired } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -41,14 +42,23 @@ export default function Login() {
         className="w-full max-w-[400px]"
       >
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-accent-600 text-white shadow-card">
-            <Scale size={20} strokeWidth={2.2} />
-          </div>
+          <Logo size="lg" withWordmark={false} />
           <h1 className="mt-4 text-[22px] font-semibold tracking-tight text-stone-900">FairFill</h1>
           <p className="mt-1.5 text-[13px] leading-relaxed text-stone-500">
             Equitable CSR allocation, structurally enforced — not left to who pitches best.
           </p>
         </div>
+
+        {sessionExpired && (
+          <motion.div
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-4 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-[12.5px] text-amber-800"
+          >
+            <AlertCircle size={14} className="mt-0.5 shrink-0" />
+            Your session expired — please log in again.
+          </motion.div>
+        )}
 
         <form onSubmit={handleSubmit} className="card p-6">
           <div className="space-y-4">
@@ -61,7 +71,10 @@ export default function Login() {
                 type="email"
                 autoComplete="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (sessionExpired) clearSessionExpired();
+                }}
                 placeholder="you@organization.org"
                 className="w-full rounded-md border border-stone-200 px-3 py-2 text-[13.5px] text-stone-900 outline-none transition-colors placeholder:text-stone-400 focus:border-accent-400 focus:ring-2 focus:ring-accent-100"
               />
