@@ -13,7 +13,7 @@ export async function login(email: string, password: string) {
   const valid = await verifyPassword(password, user.passwordHash);
   if (!valid) throw ApiError.unauthorized('Invalid email or password');
 
-  const token = signAuthToken({ sub: user.id, email: user.email, role: user.role as 'COMPANY' | 'NGO' });
+  const token = signAuthToken({ sub: user.id, email: user.email, name: user.name, role: user.role as 'COMPANY' | 'NGO' });
   return { token, profile: toProfile(user) };
 }
 

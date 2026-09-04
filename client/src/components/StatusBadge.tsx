@@ -1,6 +1,6 @@
 import { STATUS_LABELS, STATUS_TONE } from '../lib/format';
 
-const TONE_CLASSES: Record<string, string> = {
+export const TONE_CLASSES: Record<string, string> = {
   neutral: 'bg-stone-100 text-stone-600 border-stone-200',
   positive: 'bg-emerald-50 text-emerald-700 border-emerald-200',
   warning: 'bg-amber-50 text-amber-700 border-amber-200',

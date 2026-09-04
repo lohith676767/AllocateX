@@ -42,12 +42,12 @@ export default function MetricCard({
   emphasis?: boolean;
 }) {
   return (
-    <div className="flex flex-col gap-2 border-r border-stone-200 px-5 py-4 last:border-r-0 sm:first:pl-0">
+    <div className="card flex flex-col gap-2 px-4 py-3.5 transition-shadow hover:shadow-popover">
       <div className="flex items-center gap-1.5">
-        {Icon && <Icon size={12.5} strokeWidth={2.25} className="text-stone-400" />}
+        {Icon && <Icon size={12.5} strokeWidth={2.25} className="text-accent-600" />}
         <span className="label-caps">{label}</span>
       </div>
-      <div className={`font-semibold text-stone-900 ${emphasis ? 'text-[26px] tracking-tight' : 'text-[20px]'}`}>
+      <div className={`font-semibold text-stone-900 ${emphasis ? 'text-[24px] tracking-tight' : 'text-[19px]'}`}>
         <AnimatedNumber value={value} formatter={formatter} />
       </div>
       {sub && <span className="text-[11.5px] text-stone-500">{sub}</span>}

@@ -7,6 +7,7 @@ const EVENT_COLORS: Record<string, string> = {
   MILESTONE_PAUSED_EXTERNAL: 'text-amber-600',
   SALVAGE_EVALUATED: 'text-amber-600',
   REALLOCATION_PROPOSED: 'text-amber-600',
+  REALLOCATION_UNAVAILABLE: 'text-amber-600',
   REALLOCATION_APPROVED: 'text-emerald-600',
   REALLOCATION_REJECTED: 'text-rose-600',
   MILESTONE_COMPLETED: 'text-emerald-600',

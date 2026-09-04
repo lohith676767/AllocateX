@@ -1,14 +1,27 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowRight, PlayCircle, Zap } from 'lucide-react';
+import {
+  Activity,
+  ArrowRight,
+  CheckCircle2,
+  Clock3,
+  FolderCheck,
+  MapPin,
+  PiggyBank,
+  PlayCircle,
+  TrendingUp,
+  Wallet,
+  Zap,
+} from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import AllocationFlow from '../components/AllocationFlow';
 import ComparisonChart from '../components/ComparisonChart';
+import FairFillExecutionOverlay from '../components/FairFillExecutionOverlay';
 import MetricCard from '../components/MetricCard';
 import { ErrorState, LoadingState } from '../components/StateViews';
 import WhyFairFill from '../components/WhyFairFill';
 import { useApiErrorToast, useToast } from '../hooks/useToast';
-import { formatINR, formatScore } from '../lib/format';
+import { formatINR } from '../lib/format';
 import { api } from '../services/api';
 import type { RunFairFillResult } from '../types';
 
@@ -98,6 +111,11 @@ export default function Overview() {
 
   return (
     <div className="space-y-6 pb-10">
+      <FairFillExecutionOverlay
+        active={runMutation.isPending}
+        failed={runMutation.isError}
+        onDone={() => runMutation.reset()}
+      />
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <div className="flex items-center gap-2.5">
@@ -131,14 +149,43 @@ export default function Overview() {
         </div>
       </div>
 
-      <div className="card flex flex-wrap">
-        <MetricCard label="CSR Pool" value={d.totalPool} formatter={(v) => formatINR(v, { compact: true })} emphasis />
-        <MetricCard label="Allocated" value={d.allocated} formatter={(v) => formatINR(v, { compact: true })} emphasis />
-        <MetricCard label="Remaining" value={d.remaining} formatter={(v) => formatINR(v, { compact: true })} emphasis />
-        <MetricCard label="Avg FairFill Score" value={d.avgFairFillScore} formatter={(v) => formatScore(v)} />
-        <MetricCard label="Regions Served" value={d.regionsServed} formatter={(v) => `${Math.round(v)}/${d.totalRegions}`} />
-        <MetricCard label="Active Projects" value={d.activeProjects} formatter={(v) => `${Math.round(v)}`} />
-        <MetricCard label="Pending Approvals" value={d.pendingApprovals} formatter={(v) => `${Math.round(v)}`} />
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-8">
+        <MetricCard
+          label="Total CSR Pool"
+          value={d.totalPool}
+          formatter={(v) => formatINR(v, { compact: true })}
+          icon={Wallet}
+          emphasis
+        />
+        <MetricCard
+          label="Allocated"
+          value={d.allocated}
+          formatter={(v) => formatINR(v, { compact: true })}
+          icon={CheckCircle2}
+          emphasis
+        />
+        <MetricCard
+          label="Remaining"
+          value={d.remaining}
+          formatter={(v) => formatINR(v, { compact: true })}
+          icon={PiggyBank}
+          emphasis
+        />
+        <MetricCard
+          label="Regions Served"
+          value={d.regionsServed}
+          formatter={(v) => `${Math.round(v)}/${d.totalRegions}`}
+          icon={MapPin}
+        />
+        <MetricCard label="Projects Funded" value={d.projectsFunded} formatter={(v) => `${Math.round(v)}`} icon={FolderCheck} />
+        <MetricCard label="Active Projects" value={d.activeProjects} formatter={(v) => `${Math.round(v)}`} icon={Activity} />
+        <MetricCard label="Pending Approvals" value={d.pendingApprovals} formatter={(v) => `${Math.round(v)}`} icon={Clock3} />
+        <MetricCard
+          label="Avg Impact / ₹1L"
+          value={d.avgImpactPerRupee}
+          formatter={(v) => v.toFixed(1)}
+          icon={TrendingUp}
+        />
       </div>
 
       <div>

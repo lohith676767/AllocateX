@@ -173,7 +173,18 @@ export async function simulateFailure(projectId: string, actualCompletionOverrid
   await logAudit(AuditEvents.SALVAGE_EVALUATED, salvage.reason);
 
   if (salvage.decision === 'REALLOCATE') {
-    await proposeReallocation(project.id, salvage.reason);
+    // Milestone-missed and salvage-evaluated are already committed above, so a
+    // failure to find a destination must not surface as a hard request error
+    // (that would silently hide a governance event behind a generic toast) —
+    // it's recorded as its own audited outcome and left on the project so the
+    // Reallocations screen can explain, instead of showing an unexplained gap.
+    try {
+      await proposeReallocation(project.id, salvage.reason);
+    } catch (err) {
+      const reason = err instanceof ApiError ? err.message : 'Reallocation could not be proposed.';
+      await logAudit(AuditEvents.REALLOCATION_UNAVAILABLE, `"${project.name}": ${reason}`);
+      await prisma.project.update({ where: { id: project.id }, data: { lastSalvageReason: `${salvage.reason} ${reason}.` } });
+    }
   } else {
     const reviewStatus = chainTransition('MILESTONE_MISSED', ['UNDER_REVIEW']);
     await prisma.project.update({ where: { id: project.id }, data: { status: reviewStatus } });

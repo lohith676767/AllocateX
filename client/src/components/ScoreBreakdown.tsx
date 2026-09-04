@@ -1,5 +1,6 @@
 import { formatScore } from '../lib/format';
 import type { ScoreBreakdown as ScoreBreakdownType } from '../types';
+import ImpactBadge from './ImpactBadge';
 
 export default function ScoreBreakdown({ breakdown }: { breakdown: ScoreBreakdownType }) {
   const rows = [
@@ -21,8 +22,13 @@ export default function ScoreBreakdown({ breakdown }: { breakdown: ScoreBreakdow
         ))}
         <div className="my-1 border-t border-stone-200" />
         <div className="flex items-center justify-between">
-          <span className="text-[12.5px] font-semibold text-stone-800">FairFill score</span>
-          <span className="text-[22px] font-semibold tabular-nums text-stone-900">{formatScore(breakdown.finalScore)}</span>
+          <div>
+            <span className="text-[12.5px] font-semibold text-stone-800">Impact Score: {formatScore(breakdown.finalScore)}</span>
+            <p className="text-[10.5px] text-stone-400">
+              impact efficiency × NGO trust + underservice adjustment + geographical equity adjustment
+            </p>
+          </div>
+          <ImpactBadge score={breakdown.finalScore} />
         </div>
       </div>
     </div>

@@ -46,20 +46,20 @@ export function ToastProvider({ children }: { children: ReactNode }) {
               transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
               className={`pointer-events-auto card flex items-start gap-3 border-l-2 p-3.5 ${
                 t.kind === 'success'
-                  ? 'border-l-signal-teal'
+                  ? 'border-l-emerald-500'
                   : t.kind === 'error'
-                    ? 'border-l-signal-rose'
-                    : 'border-l-signal-blue'
+                    ? 'border-l-rose-500'
+                    : 'border-l-accent-500'
               }`}
             >
-              {t.kind === 'success' && <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-signal-teal" />}
-              {t.kind === 'error' && <AlertTriangle size={18} className="mt-0.5 shrink-0 text-signal-rose" />}
-              {t.kind === 'info' && <Info size={18} className="mt-0.5 shrink-0 text-signal-blue" />}
+              {t.kind === 'success' && <CheckCircle2 size={18} className="mt-0.5 shrink-0 text-emerald-500" />}
+              {t.kind === 'error' && <AlertTriangle size={18} className="mt-0.5 shrink-0 text-rose-500" />}
+              {t.kind === 'info' && <Info size={18} className="mt-0.5 shrink-0 text-accent-500" />}
               <div className="min-w-0 flex-1">
-                <p className="text-sm font-medium text-mist-100">{t.title}</p>
-                {t.description && <p className="mt-0.5 text-xs leading-relaxed text-mist-400">{t.description}</p>}
+                <p className="text-[13px] font-medium text-stone-900">{t.title}</p>
+                {t.description && <p className="mt-0.5 text-[11.5px] leading-relaxed text-stone-500">{t.description}</p>}
               </div>
-              <button onClick={() => dismiss(t.id)} className="shrink-0 text-mist-400 hover:text-mist-100">
+              <button onClick={() => dismiss(t.id)} className="shrink-0 text-stone-400 hover:text-stone-700">
                 <X size={14} />
               </button>
             </motion.div>

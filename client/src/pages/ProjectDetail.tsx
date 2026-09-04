@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowLeft, ArrowRight, CheckCircle2, FileCheck2, MapPin } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import ImpactBadge from '../components/ImpactBadge';
 import ScoreBreakdown from '../components/ScoreBreakdown';
 import StatusBadge from '../components/StatusBadge';
 import { EmptyState, ErrorState, LoadingState } from '../components/StateViews';
@@ -47,7 +48,10 @@ export default function ProjectDetail() {
         </div>
         <div className="flex flex-col gap-1 border-r border-stone-200 px-5 py-4">
           <span className="label-caps">FairFill score</span>
-          <span className="text-[20px] font-semibold tabular-nums text-accent-600">{p.finalScore.toFixed(1)}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-[20px] font-semibold tabular-nums text-accent-600">{p.finalScore.toFixed(1)}</span>
+            <ImpactBadge score={p.finalScore} small />
+          </div>
         </div>
         <div className="flex flex-col gap-1 border-r border-stone-200 px-5 py-4">
           <span className="label-caps">Completion</span>

@@ -1,12 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { AnimatePresence, motion } from 'framer-motion';
 import {
   AlertOctagon,
   CheckCircle2,
   FastForward,
   FileCheck2,
   Rewind,
+  ShieldAlert,
   SkipForward,
   StepForward,
+  Wifi,
 } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -28,6 +31,11 @@ export default function Simulation() {
   const { push } = useToast();
   const onError = useApiErrorToast();
   const [evidenceTarget, setEvidenceTarget] = useState<Milestone | null>(null);
+  const [flash, setFlash] = useState<'success' | 'failure' | null>(null);
+  const flashOnce = (kind: 'success' | 'failure') => {
+    setFlash(kind);
+    setTimeout(() => setFlash(null), 900);
+  };
 
   const projects = useQuery({ queryKey: ['projects'], queryFn: api.listProjects });
   const project = useQuery({ queryKey: ['project', id], queryFn: () => api.getProject(id!), enabled: !!id });
@@ -66,6 +74,7 @@ export default function Simulation() {
     onSuccess: () => {
       invalidate();
       push('success', 'Milestone completed');
+      flashOnce('success');
     },
     onError: (err) => onError(err, 'Could not complete milestone'),
   });
@@ -78,6 +87,7 @@ export default function Simulation() {
       } else {
         push('error', 'Milestone missed', 'A salvage decision has been recorded.');
       }
+      flashOnce('failure');
     },
     onError: (err) => onError(err, 'Could not simulate failure'),
   });
@@ -116,7 +126,20 @@ export default function Simulation() {
         {!p ? (
           <EmptyState title="Select a project" description="Choose a project on the left to control its simulated timeline." />
         ) : (
-          <div className="card p-6">
+          <div className="card relative overflow-hidden p-6">
+            <AnimatePresence>
+              {flash && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className={`pointer-events-none absolute inset-0 z-10 ${
+                    flash === 'success' ? 'bg-emerald-500/[0.06] ring-2 ring-inset ring-emerald-400' : 'bg-rose-500/[0.06] ring-2 ring-inset ring-rose-400'
+                  }`}
+                />
+              )}
+            </AnimatePresence>
             <div className="flex items-start justify-between">
               <div>
                 <h2 className="text-[15px] font-semibold text-stone-900">{p.name}</h2>
@@ -150,9 +173,17 @@ export default function Simulation() {
                   <p className="text-[13px] font-medium text-stone-900">Current milestone: {currentMilestone.name}</p>
                   <StatusBadge status={currentMilestone.status} small />
                 </div>
-                <div className="mt-2 flex flex-wrap items-center gap-x-5 gap-y-1 text-[11.5px] text-stone-500">
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 text-[11.5px] text-stone-500">
                   <span>Due Month {currentMilestone.dueMonth}</span>
-                  <span>{currentMilestone.type === 'EXTERNAL_DEPENDENCY' ? 'External dependency' : 'Self-controlled'}</span>
+                  {currentMilestone.type === 'EXTERNAL_DEPENDENCY' ? (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-amber-200 bg-amber-50 px-1.5 py-px text-[10.5px] font-medium text-amber-700">
+                      <Wifi size={10} /> External dependency
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 rounded-full border border-stone-200 bg-white px-1.5 py-px text-[10.5px] font-medium text-stone-600">
+                      <ShieldAlert size={10} /> Self-controlled
+                    </span>
+                  )}
                   <span>Expected {formatPct(currentMilestone.expectedCompletion * 100)}</span>
                   {currentMilestone.actualCompletion !== null && <span>Actual {formatPct((currentMilestone.actualCompletion ?? 0) * 100)}</span>}
                 </div>
@@ -162,6 +193,29 @@ export default function Simulation() {
                 >
                   <FileCheck2 size={13} /> Attach evidence
                 </button>
+              </div>
+            )}
+
+            {p.lastSalvageDecision && (
+              <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50/60 p-4">
+                <p className="label-caps mb-2.5 text-amber-700">Governance trail</p>
+                <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-medium text-stone-600">
+                  {['Expected', 'Actual', 'Missed', p.lastSalvageDecision.replace('_', ' '), p.status === 'REALLOCATION_PROPOSED' ? 'Reallocation' : null]
+                    .filter((step): step is string => !!step)
+                    .map((step, i, arr) => (
+                      <span key={step} className="flex items-center gap-1.5">
+                        <span
+                          className={`rounded-full border px-2 py-0.5 ${
+                            i === arr.length - 1 ? 'border-amber-300 bg-amber-100 text-amber-800' : 'border-stone-200 bg-white text-stone-600'
+                          }`}
+                        >
+                          {step}
+                        </span>
+                        {i < arr.length - 1 && <span className="text-stone-300">→</span>}
+                      </span>
+                    ))}
+                </div>
+                <p className="mt-2.5 text-[11.5px] leading-relaxed text-stone-600">{p.lastSalvageReason}</p>
               </div>
             )}
 

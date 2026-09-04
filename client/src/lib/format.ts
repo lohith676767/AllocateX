@@ -15,6 +15,34 @@ export function formatScore(value: number): string {
   return value.toFixed(1);
 }
 
+/**
+ * FairFill's final score is impactEfficiency (impact units per ₹1L — an
+ * arbitrary per-domain unit, not a percentage) multiplied by NGO trust and a
+ * fairness bonus — it is open-ended, NOT bounded to 0-100. These thresholds
+ * are tuned to the shape of the current demo dataset (observed range
+ * roughly 70-275) and are the single place to retune if the underlying
+ * score scale ever changes. The classification itself never touches the
+ * score calculation — it only labels the number FairFill already produced.
+ */
+export const IMPACT_SCORE_THRESHOLDS = { high: 220, medium: 130 } as const;
+
+export type ImpactClassification = 'HIGH' | 'MEDIUM' | 'LOW';
+
+export function classifyImpactScore(
+  score: number,
+  thresholds: { high: number; medium: number } = IMPACT_SCORE_THRESHOLDS,
+): ImpactClassification {
+  if (score >= thresholds.high) return 'HIGH';
+  if (score >= thresholds.medium) return 'MEDIUM';
+  return 'LOW';
+}
+
+export const IMPACT_CLASSIFICATION_TONE: Record<ImpactClassification, 'positive' | 'warning' | 'danger'> = {
+  HIGH: 'positive',
+  MEDIUM: 'warning',
+  LOW: 'danger',
+};
+
 export const STATUS_LABELS: Record<string, string> = {
   DRAFT: 'Draft',
   PROPOSED: 'Proposed',

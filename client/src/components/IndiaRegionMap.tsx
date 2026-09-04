@@ -102,6 +102,12 @@ export default function IndiaRegionMap({
                       <dd className="tabular-nums font-medium text-accent-600">{formatPct(r.geographicalEquityScore * 100)}</dd>
                     </div>
                     <div className="flex justify-between">
+                      <dt className="text-stone-500">Budget cap</dt>
+                      <dd className="tabular-nums font-medium text-stone-800">
+                        {r.budgetCap !== null ? formatINR(r.budgetCap, { compact: true }) : '—'}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between">
                       <dt className="text-stone-500">Allocated</dt>
                       <dd className="tabular-nums font-medium text-stone-800">{formatINR(r.allocatedAmount, { compact: true })}</dd>
                     </div>

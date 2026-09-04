@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowRight, Check, ChevronDown, X } from 'lucide-react';
+import { AlertTriangle, ArrowRight, Check, ChevronDown, X } from 'lucide-react';
 import { useState } from 'react';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
@@ -14,6 +14,12 @@ export default function Reallocations() {
   const { push } = useToast();
   const onError = useApiErrorToast();
   const reallocations = useQuery({ queryKey: ['reallocations'], queryFn: api.listReallocations });
+  // A project whose salvage decision was REALLOCATE but that never reached
+  // REALLOCATION_PROPOSED has no eligible destination — it stays parked at
+  // MILESTONE_MISSED. The empty state below must explain that, not just show
+  // "nothing here", since the reason it stalled is real governance information.
+  const projects = useQuery({ queryKey: ['projects'], queryFn: api.listProjects });
+  const stuckProjects = (projects.data ?? []).filter((p) => p.status === 'MILESTONE_MISSED' && p.lastSalvageDecision === 'REALLOCATE');
 
   const invalidate = () => queryClient.invalidateQueries();
 
@@ -48,11 +54,29 @@ export default function Reallocations() {
         subtitle="FairFill proposes. A human approves. No reallocation is ever executed automatically."
       />
 
+      {stuckProjects.length > 0 && (
+        <div className="space-y-3">
+          {stuckProjects.map((p) => (
+            <div key={p.id} className="card flex items-start gap-3 border-amber-200 bg-amber-50/40 p-4">
+              <AlertTriangle size={16} className="mt-0.5 shrink-0 text-amber-600" />
+              <div>
+                <p className="text-[13px] font-semibold text-stone-900">
+                  {p.name} — salvage recommended reallocation, but none could be proposed
+                </p>
+                <p className="mt-1 text-[12px] leading-relaxed text-stone-600">{p.lastSalvageReason}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {proposed.length === 0 ? (
-        <EmptyState
-          title="No reallocations proposed"
-          description="A reallocation is proposed automatically when a self-controlled milestone misses its target and completion falls below the salvage threshold."
-        />
+        stuckProjects.length === 0 && (
+          <EmptyState
+            title="No reallocations proposed"
+            description="A reallocation is proposed automatically when a self-controlled milestone misses its target and completion falls below the salvage threshold."
+          />
+        )
       ) : (
         <div className="space-y-4">
           {proposed.map((r) => (
@@ -130,7 +154,24 @@ function ReallocationCard({
           <span className="text-[13px] font-semibold text-stone-900">Reallocation proposed</span>
         </div>
 
-        <div className="mt-4 flex flex-wrap items-center gap-4 rounded-lg border border-stone-200 bg-stone-50/60 p-4">
+        <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[10.5px] font-medium text-stone-500">
+          {['Failed Project', 'Remaining Funds', 'Eligible Destination', 'Destination Score', 'Human Approval', 'Release'].map(
+            (step, i, arr) => (
+              <span key={step} className="flex items-center gap-1.5">
+                <span
+                  className={`rounded-full border px-2 py-0.5 ${
+                    i === 4 ? 'border-accent-300 bg-accent-50 text-accent-700' : 'border-stone-200 bg-white text-stone-600'
+                  }`}
+                >
+                  {step}
+                </span>
+                {i < arr.length - 1 && <span className="text-stone-300">→</span>}
+              </span>
+            )
+          )}
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-4 rounded-lg border border-stone-200 bg-stone-50/60 p-4">
           <div className="min-w-[140px]">
             <p className="label-caps">Source</p>
             <p className="text-[13px] font-medium text-stone-900">{r.sourceProject?.name}</p>

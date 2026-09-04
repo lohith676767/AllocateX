@@ -21,7 +21,7 @@ function CompanyApp() {
   return (
     <div className="flex h-screen overflow-hidden bg-stone-50">
       <Sidebar />
-      <main className="flex-1 overflow-y-auto">
+      <main className="flex-1 overflow-y-auto pt-14 lg:pt-0">
         <div className="mx-auto max-w-[1360px] px-8 py-8 md:px-10">
           <Routes>
             <Route path="/" element={<Overview />} />

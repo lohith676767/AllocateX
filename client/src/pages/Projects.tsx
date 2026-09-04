@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ArrowDown, ArrowUp, ArrowUpDown } from 'lucide-react';
 import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import ImpactBadge from '../components/ImpactBadge';
 import PageHeader from '../components/PageHeader';
 import StatusBadge from '../components/StatusBadge';
 import { ErrorState, LoadingState } from '../components/StateViews';
@@ -14,8 +15,8 @@ const DOMAIN_FILTERS = ['ALL', 'HEALTHCARE', 'WATER_SANITATION', 'EDUCATION'];
 type SortKey = 'requestedBudget' | 'fundedAmount' | 'finalScore' | 'impactPerRupee';
 const SORT_LABEL: Record<SortKey, string> = {
   requestedBudget: 'Requested',
-  fundedAmount: 'Proposed',
-  finalScore: 'FairFill Score',
+  fundedAmount: 'Funded',
+  finalScore: 'Final Score',
   impactPerRupee: 'Impact / ₹',
 };
 
@@ -86,6 +87,9 @@ export default function Projects() {
                     Final score: <b className="text-accent-600">{formatScore(p.finalScore)}</b>
                   </span>
                 </div>
+                <div className="mt-2.5">
+                  <ImpactBadge score={p.finalScore} small />
+                </div>
               </button>
             ))}
           </div>
@@ -113,7 +117,7 @@ export default function Projects() {
               <th className="px-4 py-3 font-medium">Project</th>
               <th className="px-4 py-3 font-medium">NGO</th>
               <th className="px-4 py-3 font-medium">Region</th>
-              <th className="px-4 py-3 font-medium">Category</th>
+              <th className="px-4 py-3 font-medium">Domain</th>
               {(['requestedBudget', 'fundedAmount', 'finalScore', 'impactPerRupee'] as SortKey[]).map((key) => (
                 <th key={key} className="px-4 py-3 text-right font-medium">
                   <button onClick={() => toggleSort(key)} className="ml-auto flex items-center gap-1 hover:text-stone-700">
@@ -130,6 +134,7 @@ export default function Projects() {
                   </button>
                 </th>
               ))}
+              <th className="px-4 py-3 font-medium">Impact</th>
               <th className="px-4 py-3 font-medium">Status</th>
             </tr>
           </thead>
@@ -158,6 +163,9 @@ function ProjectRow({ p, onClick }: { p: Project; onClick: () => void }) {
       <td className="px-4 py-3 text-right tabular-nums font-semibold text-accent-600">{formatScore(p.finalScore)}</td>
       <td className="px-4 py-3 text-right tabular-nums text-stone-700">
         {formatScore((p.impactUnits / p.requestedBudget) * 100000)}
+      </td>
+      <td className="px-4 py-3">
+        <ImpactBadge score={p.finalScore} small />
       </td>
       <td className="px-4 py-3">
         <StatusBadge status={p.status} small />

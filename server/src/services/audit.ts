@@ -1,4 +1,5 @@
 import { prisma } from '../db/client.js';
+import { getCurrentActor } from '../utils/requestContext.js';
 
 export const AuditEvents = {
   REGIONAL_ALLOCATION_CREATED: 'REGIONAL_ALLOCATION_CREATED',
@@ -17,6 +18,7 @@ export const AuditEvents = {
   REALLOCATION_PROPOSED: 'REALLOCATION_PROPOSED',
   REALLOCATION_APPROVED: 'REALLOCATION_APPROVED',
   REALLOCATION_REJECTED: 'REALLOCATION_REJECTED',
+  REALLOCATION_UNAVAILABLE: 'REALLOCATION_UNAVAILABLE',
   DEMO_RESET: 'DEMO_RESET',
   DATA_IMPORTED: 'DATA_IMPORTED',
   PROPOSAL_SUBMITTED: 'PROPOSAL_SUBMITTED',
@@ -26,7 +28,7 @@ export const AuditEvents = {
 
 export type AuditEventName = (typeof AuditEvents)[keyof typeof AuditEvents];
 
-export async function logAudit(event: AuditEventName, details: string, actor = 'CSR Administrator') {
+export async function logAudit(event: AuditEventName, details: string, actor: string = getCurrentActor() ?? 'CSR Administrator') {
   return prisma.auditEvent.create({
     data: { event, details, actor },
   });

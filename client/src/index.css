@@ -13,7 +13,7 @@ body {
 }
 
 ::selection {
-  background: rgba(76, 91, 199, 0.16);
+  background: rgba(34, 125, 115, 0.16);
 }
 
 ::-webkit-scrollbar {
@@ -36,6 +36,20 @@ body {
   outline: 2px solid theme('colors.accent.500');
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+/* Framer Motion animations are handled by <MotionConfig reducedMotion="user">
+   in main.tsx — this covers everything else (Tailwind's animate-*, and plain
+   CSS transitions like the simulation timeline's progress bar). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 @layer components {

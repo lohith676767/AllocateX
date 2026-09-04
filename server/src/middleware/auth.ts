@@ -1,6 +1,7 @@
 import type { NextFunction, Request, Response } from 'express';
 import { ApiError } from '../utils/errors.js';
 import { verifyAuthToken, type AuthTokenPayload } from '../utils/jwt.js';
+import { runWithActor } from '../utils/requestContext.js';
 
 export const AUTH_COOKIE_NAME = 'fairfill_token';
 
@@ -18,7 +19,8 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction) {
   if (!token) return next(ApiError.unauthorized());
   try {
     req.user = verifyAuthToken(token);
-    next();
+    const actor = req.user.name ? `${req.user.name} (${req.user.role})` : req.user.email;
+    runWithActor(actor, next);
   } catch {
     next(ApiError.unauthorized('Session expired — please log in again'));
   }
