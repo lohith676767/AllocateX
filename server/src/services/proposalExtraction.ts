@@ -60,6 +60,66 @@ function findField(text: string, labels: string[]): string | null {
   return null;
 }
 
+// Every label recognized anywhere in the document — used to know where a
+// multi-line field (like description) should stop, so it doesn't swallow
+// the next field's heading.
+const ALL_LABELS = [
+  'project name',
+  'project title',
+  'project',
+  'title',
+  'description',
+  'summary',
+  'overview',
+  'requested budget',
+  'budget requested',
+  'amount requested',
+  'budget',
+  'total cost',
+  'funding requested',
+  'impact units',
+  'expected beneficiaries',
+  'beneficiaries',
+  'people impacted',
+  'households',
+  'region',
+  'location',
+  'district',
+  'area',
+  'domain',
+  'sector',
+  'submitted by',
+  'organization',
+  'implementation plan',
+  'contact',
+];
+
+/**
+ * Like findField, but captures every line up to (not including) a blank
+ * line or the next recognized label — a PDF/DOCX paragraph wraps across
+ * several visual lines, so a single-line grab would truncate it mid-sentence.
+ */
+function findMultilineField(text: string, labels: string[]): string | null {
+  const lines = text.split('\n');
+  for (const label of labels) {
+    const startRe = new RegExp(`^\\s*${label}\\s*[:\\-]\\s*(.*)$`, 'i');
+    for (let i = 0; i < lines.length; i++) {
+      const match = lines[i].match(startRe);
+      if (!match) continue;
+      const collected = [match[1].trim()];
+      for (let j = i + 1; j < lines.length; j++) {
+        const line = lines[j].trim();
+        if (line === '') break;
+        if (ALL_LABELS.some((l) => new RegExp(`^${l}\\s*[:\\-]`, 'i').test(line))) break;
+        collected.push(line);
+      }
+      const result = collected.filter(Boolean).join(' ').trim();
+      if (result) return result;
+    }
+  }
+  return null;
+}
+
 function parseAmount(raw: string | null): number | null {
   if (!raw) return null;
   const cleaned = raw.replace(/[₹,]/g, '').replace(/rs\.?/i, '').trim();
@@ -98,7 +158,7 @@ export function extractProposalFields(text: string): ExtractedProposal {
   }
 
   const description =
-    findField(text, ['description', 'summary', 'overview']) ??
+    findMultilineField(text, ['description', 'summary', 'overview']) ??
     'Submitted via NGO proposal upload — see original document for full details.';
 
   const budgetRaw = findField(text, [
