@@ -19,6 +19,12 @@ export function standardTiers(totalAmount: number, totalImpact: number): TierSpe
 const NATIONAL_PEER_COHORT = 'National CSR Peer Cohort';
 
 async function wipeDatabase() {
+  // Proposal state is scenario data, same as everything below — cleared on
+  // every reset so the NGO->Company demo flow can be replayed from scratch.
+  // Login accounts (User/Company/CompanyUser) are NOT touched here: resetting
+  // the scenario shouldn't log anyone out or forget who can log in.
+  await prisma.proposalRecipient.deleteMany();
+  await prisma.proposal.deleteMany();
   await prisma.evidence.deleteMany();
   await prisma.milestone.deleteMany();
   await prisma.allocation.deleteMany();
@@ -368,8 +374,10 @@ const isMainModule = Boolean(process.argv[1]) && import.meta.url === pathToFileU
 
 if (isMainModule) {
   seedDatabase()
-    .then((counts) => {
-      console.log('Seed complete:', counts);
+    .then(async (counts) => {
+      const { seedAuthDemo } = await import('./seedAuth.js');
+      const authCounts = await seedAuthDemo();
+      console.log('Seed complete:', counts, authCounts);
       return prisma.$disconnect();
     })
     .catch(async (err) => {
