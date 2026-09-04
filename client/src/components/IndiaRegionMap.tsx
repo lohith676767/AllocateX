@@ -60,7 +60,10 @@ export default function IndiaRegionMap({
       </div>
       <p className="mt-1 text-[12px] text-stone-500">Hover a pin for key metrics, click to open its full detail.</p>
 
-      <div className="relative mt-5 h-[420px] w-full overflow-hidden rounded-lg border border-stone-200">
+      {/* isolate: Leaflet assigns its internal panes/controls z-index values up
+          to 1000, which would otherwise escape above page elements like the
+          region drawer (z-50) — isolation contains them to this box. */}
+      <div className="isolate relative mt-5 h-[420px] w-full overflow-hidden rounded-lg border border-stone-200">
         <MapContainer
           bounds={bounds}
           // Extra top padding so a pin near the fitted view's top edge still
