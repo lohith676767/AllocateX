@@ -6,6 +6,7 @@ import type {
   ComparisonRow,
   DashboardData,
   Evidence,
+  ExtractedProposalFields,
   FairFillConfig,
   InboxItem,
   Milestone,
@@ -103,12 +104,13 @@ export const api = {
 
   listCompanies: () => request<Company[]>('/companies'),
 
-  submitProposal: (file: File, companyIds: string[]) => {
+  previewProposal: (file: File) => {
     const form = new FormData();
     form.append('file', file);
-    companyIds.forEach((id) => form.append('companyIds', id));
-    return request<Proposal>('/proposals', { method: 'POST', body: form });
+    return request<{ filename: string; extracted: ExtractedProposalFields }>('/proposals/preview', { method: 'POST', body: form });
   },
+  submitProposal: (filename: string, extracted: ExtractedProposalFields, companyIds: string[]) =>
+    post<Proposal>('/proposals', { filename, extracted, companyIds }),
   listSentProposals: () => request<Proposal[]>('/proposals/sent'),
 
   listInbox: () => request<InboxItem[]>('/proposals/inbox'),

@@ -25,6 +25,7 @@ import {
   getInbox,
   getSentProposals,
   postAcceptProposal,
+  postPreviewProposal,
   postRejectProposal,
   postSubmitProposal,
 } from '../controllers/proposalController.js';
@@ -44,7 +45,8 @@ router.get('/auth/me', requireAuth, getMe);
 router.get('/companies', requireAuth, listCompanies);
 
 // ── NGO proposal submission ─────────────────────────────────────────
-router.post('/proposals', ...ngo, uploadProposal, postSubmitProposal);
+router.post('/proposals/preview', ...ngo, uploadProposal, postPreviewProposal);
+router.post('/proposals', ...ngo, postSubmitProposal);
 router.get('/proposals/sent', ...ngo, getSentProposals);
 
 // ── Company proposal inbox ──────────────────────────────────────────

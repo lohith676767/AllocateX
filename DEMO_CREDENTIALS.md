@@ -21,6 +21,6 @@ Password for every account below: **`password123`**
 
 ## Demo flow (two browsers/laptops)
 
-1. **NGO laptop**: log in as `ngo1@fairfill.demo` → Submit Proposal → upload `sample-proposal.txt` (in this repo) → select one or more companies → Submit.
+1. **NGO laptop**: log in as `ngo1@fairfill.demo` → upload `sample-proposal.txt` (in this repo) → review/edit the extracted fields → select one or more companies → Submit.
 2. **Company laptop**: log in as `company1@fairfill.demo` (or `company2@fairfill.demo` if that company was selected) → Inbox → open the new proposal → Accept.
 3. On the company account, go to **Overview** → **Generate Allocation** — the accepted proposal is now a real project and gets scored alongside everything else.

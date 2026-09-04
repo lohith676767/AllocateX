@@ -4,18 +4,53 @@ import { ApiError } from '../utils/errors.js';
 import { AuditEvents, logAudit } from './audit.js';
 import { extractProposalFields, extractTextFromFile, type ExtractedProposal } from './proposalExtraction.js';
 
+/**
+ * Step 1 of the NGO flow: parse the uploaded document and hand back the
+ * extracted fields for the NGO to review (and correct, if the deterministic
+ * extractor got something wrong) — nothing is written to the database yet.
+ */
+export async function previewProposal(file: { buffer: Buffer; originalname: string; mimetype: string }) {
+  const text = await extractTextFromFile(file.buffer, file.originalname, file.mimetype);
+  const extracted = extractProposalFields(text);
+  return { filename: file.originalname, extracted };
+}
+
+function assertValidExtracted(extracted: Partial<ExtractedProposal>): asserts extracted is ExtractedProposal {
+  if (!extracted || typeof extracted.name !== 'string' || !extracted.name.trim()) {
+    throw ApiError.badRequest('A project name is required.');
+  }
+  if (typeof extracted.description !== 'string' || !extracted.description.trim()) {
+    throw ApiError.badRequest('A description is required.');
+  }
+  if (!extracted.domain || typeof extracted.domain !== 'string') {
+    throw ApiError.badRequest('A domain is required.');
+  }
+  if (typeof extracted.requestedBudget !== 'number' || !(extracted.requestedBudget > 0)) {
+    throw ApiError.badRequest('Requested budget must be a positive number.');
+  }
+  if (typeof extracted.impactUnits !== 'number' || !(extracted.impactUnits > 0)) {
+    throw ApiError.badRequest('Impact units must be a positive number.');
+  }
+}
+
+/**
+ * Step 2: the NGO has reviewed (and possibly edited) the extracted fields
+ * and picked recipient companies. This is what actually creates the
+ * Proposal + ProposalRecipient rows — the reviewed JSON is the one stored
+ * and later used at Accept time, not a re-parse of the original file.
+ */
 export async function submitProposal(
   ngoUserId: string,
-  file: { buffer: Buffer; originalname: string; mimetype: string },
+  filename: string,
+  extractedInput: Partial<ExtractedProposal>,
   companyIds: string[]
 ) {
   if (companyIds.length === 0) throw ApiError.badRequest('Select at least one company to send this proposal to.');
+  assertValidExtracted(extractedInput);
+  const extracted = extractedInput;
 
   const companies = await prisma.company.findMany({ where: { id: { in: companyIds } } });
   if (companies.length !== companyIds.length) throw ApiError.badRequest('One or more selected companies could not be found.');
-
-  const text = await extractTextFromFile(file.buffer, file.originalname, file.mimetype);
-  const extracted = extractProposalFields(text);
 
   // Duplicate guard: don't let the same NGO re-send a project with the same
   // name to a company that already has an undecided or accepted copy of it.
@@ -34,9 +69,9 @@ export async function submitProposal(
   const proposal = await prisma.proposal.create({
     data: {
       ngoUserId,
-      filename: file.originalname,
+      filename,
       extractedJson: JSON.stringify(extracted),
-      extractionNote: extracted.note,
+      extractionNote: extracted.note ?? 'Reviewed and submitted by the NGO.',
       recipients: { create: companyIds.map((companyId) => ({ companyId })) },
     },
     include: { recipients: { include: { company: true } } },

@@ -1,12 +1,18 @@
 import type { Request, Response } from 'express';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { ApiError } from '../utils/errors.js';
-import { acceptProposal, listInboxForUser, listSentProposals, rejectProposal, submitProposal } from '../services/proposals.js';
+import { acceptProposal, listInboxForUser, listSentProposals, previewProposal, rejectProposal, submitProposal } from '../services/proposals.js';
+
+export const postPreviewProposal = asyncHandler(async (req: Request, res: Response) => {
+  if (!req.file) throw ApiError.badRequest('Attach a proposal file (PDF, DOCX, or plain text).');
+  res.json(await previewProposal(req.file));
+});
 
 export const postSubmitProposal = asyncHandler(async (req: Request, res: Response) => {
-  if (!req.file) throw ApiError.badRequest('Attach a proposal file (PDF, DOCX, or plain text).');
-  const companyIds = ([] as string[]).concat(req.body.companyIds ?? []);
-  const proposal = await submitProposal(req.user!.sub, req.file, companyIds);
+  const { filename, extracted, companyIds } = req.body ?? {};
+  if (!filename || !extracted) throw ApiError.badRequest('Missing the reviewed proposal data — extract it again before submitting.');
+  const ids = ([] as string[]).concat(companyIds ?? []);
+  const proposal = await submitProposal(req.user!.sub, filename, extracted, ids);
   res.status(201).json(proposal);
 });
 
