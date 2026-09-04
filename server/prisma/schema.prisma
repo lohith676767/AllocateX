@@ -12,21 +12,21 @@ datasource db {
 // ─────────────────────────────────────────────────────────────
 
 model Region {
-  id                      String   @id @default(cuid())
+  id                      String @id @default(cuid())
   name                    String
   state                   String
   population              Int
   peerGroup               String
   domain                  String
   needIndex               Float
-  underserviceScore       Float    @default(0)
-  geographicalEquityScore Float    @default(0)
+  underserviceScore       Float  @default(0)
+  geographicalEquityScore Float  @default(0)
   historicalCSR           Float
-  serviceLevel            Float    @default(0)
-  benchmarkServiceLevel   Float    @default(1)
-  budgetDemand            Float    @default(0)
+  serviceLevel            Float  @default(0)
+  benchmarkServiceLevel   Float  @default(1)
+  budgetDemand            Float  @default(0)
   budgetCap               Float?
-  allocatedAmount         Float    @default(0)
+  allocatedAmount         Float  @default(0)
 
   indicators  RegionIndicator[]
   ngos        NGO[]
@@ -38,9 +38,9 @@ model Region {
 }
 
 model RegionIndicator {
-  id             String @id @default(cuid())
+  id             String  @id @default(cuid())
   regionId       String
-  region         Region @relation(fields: [regionId], references: [id], onDelete: Cascade)
+  region         Region  @relation(fields: [regionId], references: [id], onDelete: Cascade)
   key            String
   label          String
   regionalValue  Float
@@ -60,6 +60,7 @@ model NGO {
   projectsDelayed   Int       @default(0)
   projectsFailed    Int       @default(0)
   projects          Project[]
+  users             User[]
 }
 
 // ─────────────────────────────────────────────────────────────
@@ -84,11 +85,11 @@ model Project {
   trustMultiplier   Float @default(1)
   finalScore        Float @default(0)
 
-  status                String @default("DRAFT")
-  completionPercentage  Float  @default(0)
-  currentSimulatedMonth Int    @default(0)
-  salvageThreshold      Float  @default(0.6)
-  fundedAmount          Float  @default(0)
+  status                String  @default("DRAFT")
+  completionPercentage  Float   @default(0)
+  currentSimulatedMonth Int     @default(0)
+  salvageThreshold      Float   @default(0.6)
+  fundedAmount          Float   @default(0)
   isConcave             Boolean @default(true)
   isComparisonHighlight String? // "IMPACT_ONLY" | "FAIRFILL_WINNER" | null
   isDemoFeature         String? // "SUCCESS" | "EXTERNAL_DEPENDENCY" | "SELF_FAILURE" | null
@@ -96,9 +97,9 @@ model Project {
   lastSalvageDecision String?
   lastSalvageReason   String?
 
-  tiers        ProjectTier[]
-  milestones   Milestone[]
-  allocations  Allocation[]
+  tiers                      ProjectTier[]
+  milestones                 Milestone[]
+  allocations                Allocation[]
   reallocationsAsSource      Reallocation[] @relation("SourceProject")
   reallocationsAsDestination Reallocation[] @relation("DestinationProject")
 
@@ -107,26 +108,26 @@ model Project {
 }
 
 model ProjectTier {
-  id        String  @id @default(cuid())
-  projectId String
-  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  order     Int
-  amount    Float
-  impact    Float
-  fundedAmount Float @default(0)
+  id           String  @id @default(cuid())
+  projectId    String
+  project      Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  order        Int
+  amount       Float
+  impact       Float
+  fundedAmount Float   @default(0)
 }
 
 model Milestone {
-  id                 String   @id @default(cuid())
+  id                 String    @id @default(cuid())
   projectId          String
-  project            Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  project            Project   @relation(fields: [projectId], references: [id], onDelete: Cascade)
   name               String
   dueMonth           Int
-  order              Int      @default(0)
+  order              Int       @default(0)
   type               String
   expectedCompletion Float
   actualCompletion   Float?
-  status             String   @default("UPCOMING")
+  status             String    @default("UPCOMING")
   evidence           Evidence?
 
   createdAt DateTime @default(now())
@@ -181,4 +182,68 @@ model AuditEvent {
   actor     String
   details   String
   timestamp DateTime @default(now())
+}
+
+// ─────────────────────────────────────────────────────────────
+// AUTH + NGO PROPOSAL PIPELINE
+// ─────────────────────────────────────────────────────────────
+
+model User {
+  id           String  @id @default(cuid())
+  email        String  @unique
+  passwordHash String
+  name         String
+  role         String // "COMPANY" | "NGO"
+  ngoId        String? // set only for role NGO — which existing NGO org this login represents
+  ngo          NGO?    @relation(fields: [ngoId], references: [id], onDelete: SetNull)
+
+  companies     CompanyUser[]
+  proposalsSent Proposal[]
+
+  createdAt DateTime @default(now())
+}
+
+model Company {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  users CompanyUser[]
+  inbox ProposalRecipient[]
+}
+
+model CompanyUser {
+  id        String  @id @default(cuid())
+  userId    String
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  companyId String
+  company   Company @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, companyId])
+}
+
+model Proposal {
+  id             String   @id @default(cuid())
+  ngoUserId      String
+  ngoUser        User     @relation(fields: [ngoUserId], references: [id])
+  filename       String
+  extractedJson  String // JSON-encoded ImportPayload-shaped project data
+  extractionNote String // human-readable summary of what was parsed / any fallback used
+  createdAt      DateTime @default(now())
+
+  recipients ProposalRecipient[]
+}
+
+model ProposalRecipient {
+  id               String    @id @default(cuid())
+  proposalId       String
+  proposal         Proposal  @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  companyId        String
+  company          Company   @relation(fields: [companyId], references: [id], onDelete: Cascade)
+  status           String    @default("PENDING") // PENDING | ACCEPTED | REJECTED
+  createdProjectId String?
+  decidedAt        DateTime?
+  createdAt        DateTime  @default(now())
+
+  @@unique([proposalId, companyId])
 }

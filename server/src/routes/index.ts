@@ -19,40 +19,71 @@ import {
 import { listAuditEvents } from '../controllers/auditController.js';
 import { postResetDemo } from '../controllers/demoController.js';
 import { postImportData } from '../controllers/importController.js';
+import { getMe, postLogin, postLogout } from '../controllers/authController.js';
+import { listCompanies } from '../controllers/companyController.js';
+import {
+  getInbox,
+  getSentProposals,
+  postAcceptProposal,
+  postRejectProposal,
+  postSubmitProposal,
+} from '../controllers/proposalController.js';
+import { requireAuth, requireRole } from '../middleware/auth.js';
+import { uploadProposal } from '../middleware/upload.js';
 
 export const router = Router();
 
-router.get('/dashboard', getDashboard);
-router.get('/config', getConfig);
+const company = [requireAuth, requireRole('COMPANY')];
+const ngo = [requireAuth, requireRole('NGO')];
 
-router.get('/regions', listRegions);
-router.get('/regions/:id', getRegion);
+// ── Auth (login is public; everything else needs a session) ────────────
+router.post('/auth/login', postLogin);
+router.post('/auth/logout', postLogout);
+router.get('/auth/me', requireAuth, getMe);
 
-router.get('/projects', listProjects);
-router.get('/projects/:id', getProject);
-router.get('/projects/:id/milestones', getProjectMilestones);
+router.get('/companies', requireAuth, listCompanies);
 
-router.post('/fairfill/run', postRunFairFill);
-router.get('/fairfill/comparison', getComparison);
+// ── NGO proposal submission ─────────────────────────────────────────
+router.post('/proposals', ...ngo, uploadProposal, postSubmitProposal);
+router.get('/proposals/sent', ...ngo, getSentProposals);
 
-router.get('/allocations', listAllocations);
-router.post('/allocations/:id/approve', postApproveAllocation);
-router.post('/allocations/:id/reject', postRejectAllocation);
+// ── Company proposal inbox ──────────────────────────────────────────
+router.get('/proposals/inbox', ...company, getInbox);
+router.post('/proposals/:id/accept', ...company, postAcceptProposal);
+router.post('/proposals/:id/reject', ...company, postRejectProposal);
 
-router.post('/simulation/:projectId/advance', postAdvanceSimulation);
-router.post('/simulation/:projectId/rewind', postRewindSimulation);
-router.post('/simulation/:projectId/jump', postJumpSimulation);
-router.post('/simulation/:projectId/fail-milestone', postFailMilestone);
+// ── Existing FairFill application (Company role only) ───────────────
+router.get('/dashboard', ...company, getDashboard);
+router.get('/config', ...company, getConfig);
 
-router.post('/milestones/:id/complete', postCompleteMilestone);
-router.post('/milestones/:id/evidence', postMilestoneEvidence);
-router.post('/evidence/:id/review', postReviewEvidence);
+router.get('/regions', ...company, listRegions);
+router.get('/regions/:id', ...company, getRegion);
 
-router.get('/reallocations', listReallocations);
-router.post('/reallocations/:id/approve', postApproveReallocation);
-router.post('/reallocations/:id/reject', postRejectReallocation);
+router.get('/projects', ...company, listProjects);
+router.get('/projects/:id', ...company, getProject);
+router.get('/projects/:id/milestones', ...company, getProjectMilestones);
 
-router.get('/audit', listAuditEvents);
+router.post('/fairfill/run', ...company, postRunFairFill);
+router.get('/fairfill/comparison', ...company, getComparison);
 
-router.post('/demo/reset', postResetDemo);
-router.post('/import', postImportData);
+router.get('/allocations', ...company, listAllocations);
+router.post('/allocations/:id/approve', ...company, postApproveAllocation);
+router.post('/allocations/:id/reject', ...company, postRejectAllocation);
+
+router.post('/simulation/:projectId/advance', ...company, postAdvanceSimulation);
+router.post('/simulation/:projectId/rewind', ...company, postRewindSimulation);
+router.post('/simulation/:projectId/jump', ...company, postJumpSimulation);
+router.post('/simulation/:projectId/fail-milestone', ...company, postFailMilestone);
+
+router.post('/milestones/:id/complete', ...company, postCompleteMilestone);
+router.post('/milestones/:id/evidence', ...company, postMilestoneEvidence);
+router.post('/evidence/:id/review', ...company, postReviewEvidence);
+
+router.get('/reallocations', ...company, listReallocations);
+router.post('/reallocations/:id/approve', ...company, postApproveReallocation);
+router.post('/reallocations/:id/reject', ...company, postRejectReallocation);
+
+router.get('/audit', ...company, listAuditEvents);
+
+router.post('/demo/reset', ...company, postResetDemo);
+router.post('/import', ...company, postImportData);

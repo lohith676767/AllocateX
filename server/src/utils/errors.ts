@@ -20,4 +20,12 @@ export class ApiError extends Error {
   static conflict(message: string, details?: unknown) {
     return new ApiError(409, message, details);
   }
+
+  static unauthorized(message = 'Authentication required') {
+    return new ApiError(401, message);
+  }
+
+  static forbidden(message = 'Not allowed for this account role') {
+    return new ApiError(403, message);
+  }
 }
