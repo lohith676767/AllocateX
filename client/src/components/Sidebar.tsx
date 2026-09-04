@@ -3,8 +3,10 @@ import {
   Activity,
   ClipboardList,
   FileCheck2,
+  Inbox as InboxIcon,
   Layers,
   LayoutGrid,
+  LogOut,
   Map,
   RefreshCcw,
   Repeat,
@@ -13,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useRef, useState } from 'react';
 import { NavLink } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import { api } from '../services/api';
 import { useApiErrorToast, useToast } from '../hooks/useToast';
 
@@ -46,6 +49,7 @@ const GROUPS: { label: string; items: NavItem[] }[] = [
       { to: '/reallocations', label: 'Reallocations', icon: Repeat },
       { to: '/evidence', label: 'Evidence', icon: FileCheck2 },
       { to: '/audit', label: 'Audit Log', icon: ClipboardList },
+      { to: '/inbox', label: 'Proposal Inbox', icon: InboxIcon },
     ],
   },
 ];
@@ -78,6 +82,7 @@ export default function Sidebar() {
   const { push } = useToast();
   const onError = useApiErrorToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { user, logout } = useAuth();
 
   const dashboard = useQuery({ queryKey: ['dashboard'], queryFn: api.getDashboard });
 
@@ -124,6 +129,16 @@ export default function Sidebar() {
           <p className="text-[14px] font-semibold tracking-tight text-stone-900">FairFill</p>
           <p className="text-[10px] font-medium uppercase tracking-wider text-stone-400">CSR Intelligence</p>
         </div>
+      </div>
+
+      <div className="flex items-center gap-2 border-y border-stone-100 bg-stone-50/60 px-5 py-2.5">
+        <div className="min-w-0 flex-1 leading-tight">
+          <p className="truncate text-[12px] font-medium text-stone-800">{user?.name}</p>
+          <p className="truncate text-[10.5px] text-stone-400">{user?.companies?.[0]?.name ?? user?.email}</p>
+        </div>
+        <button onClick={() => logout()} aria-label="Log out" className="shrink-0 rounded-md p-1.5 text-stone-400 hover:bg-stone-100 hover:text-stone-700">
+          <LogOut size={14} />
+        </button>
       </div>
 
       <nav className="flex-1 space-y-5 overflow-y-auto px-3 pb-4">

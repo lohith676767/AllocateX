@@ -1,12 +1,16 @@
 import type {
   Allocation,
   AuditEvent,
+  AuthUser,
+  Company,
   ComparisonRow,
   DashboardData,
   Evidence,
   FairFillConfig,
+  InboxItem,
   Milestone,
   Project,
+  Proposal,
   Reallocation,
   Region,
   RunFairFillResult,
@@ -25,9 +29,11 @@ export class ApiRequestError extends Error {
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const isFormData = options?.body instanceof FormData;
   const res = await fetch(`${BASE}${path}`, {
     ...options,
-    headers: { 'Content-Type': 'application/json', ...(options?.headers ?? {}) },
+    credentials: 'include',
+    headers: isFormData ? options?.headers : { 'Content-Type': 'application/json', ...(options?.headers ?? {}) },
   });
   if (!res.ok) {
     let message = res.statusText;
@@ -90,4 +96,22 @@ export const api = {
 
   importData: (payload: unknown) =>
     post<{ message: string; regions: number; ngos: number; projects: number }>('/import', payload),
+
+  login: (email: string, password: string) => post<AuthUser>('/auth/login', { email, password }),
+  logout: () => post<{ message: string }>('/auth/logout'),
+  getMe: () => request<AuthUser>('/auth/me'),
+
+  listCompanies: () => request<Company[]>('/companies'),
+
+  submitProposal: (file: File, companyIds: string[]) => {
+    const form = new FormData();
+    form.append('file', file);
+    companyIds.forEach((id) => form.append('companyIds', id));
+    return request<Proposal>('/proposals', { method: 'POST', body: form });
+  },
+  listSentProposals: () => request<Proposal[]>('/proposals/sent'),
+
+  listInbox: () => request<InboxItem[]>('/proposals/inbox'),
+  acceptProposal: (recipientId: string) => post<{ recipientId: string; project: Project }>(`/proposals/${recipientId}/accept`),
+  rejectProposal: (recipientId: string) => post(`/proposals/${recipientId}/reject`),
 };

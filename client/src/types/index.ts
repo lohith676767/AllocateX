@@ -224,6 +224,61 @@ export interface ComparisonRow {
   fairfillAmount: number;
 }
 
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  role: 'COMPANY' | 'NGO';
+  ngo: { id: string; name: string } | null;
+  companies: { id: string; name: string }[];
+}
+
+export interface Company {
+  id: string;
+  name: string;
+}
+
+export interface ProposalRecipientSummary {
+  id: string;
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  company: Company;
+}
+
+export interface Proposal {
+  id: string;
+  filename: string;
+  extractedJson: string;
+  extractionNote: string;
+  createdAt: string;
+  recipients: ProposalRecipientSummary[];
+}
+
+export interface ExtractedProposalFields {
+  name: string;
+  description: string;
+  domain: string;
+  requestedBudget: number;
+  impactUnits: number;
+  regionNameGuess: string | null;
+  note: string;
+}
+
+export interface InboxItem {
+  id: string;
+  status: 'PENDING' | 'ACCEPTED' | 'REJECTED';
+  createdAt: string;
+  decidedAt: string | null;
+  company: Company;
+  proposal: {
+    id: string;
+    filename: string;
+    extractedJson: string;
+    extractionNote: string;
+    createdAt: string;
+    ngoUser: { name: string; email: string; ngo: { id: string; name: string } | null };
+  };
+}
+
 export interface FairFillConfig {
   totalCsrPool: number;
   alphaUnderserviceWeight: number;

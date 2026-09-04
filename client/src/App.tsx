@@ -1,5 +1,10 @@
 import { Route, Routes } from 'react-router-dom';
+import ProtectedRoute from './components/ProtectedRoute';
 import Sidebar from './components/Sidebar';
+import { useAuth } from './contexts/AuthContext';
+import { LoadingState } from './components/StateViews';
+import Login from './pages/Login';
+import NgoProposal from './pages/ngo/NgoProposal';
 import Overview from './pages/Overview';
 import Regions from './pages/Regions';
 import RegionDetail from './pages/RegionDetail';
@@ -10,8 +15,9 @@ import Simulation from './pages/Simulation';
 import Reallocations from './pages/Reallocations';
 import Evidence from './pages/Evidence';
 import Audit from './pages/Audit';
+import Inbox from './pages/Inbox';
 
-export default function App() {
+function CompanyApp() {
   return (
     <div className="flex h-screen overflow-hidden bg-stone-50">
       <Sidebar />
@@ -29,9 +35,38 @@ export default function App() {
             <Route path="/reallocations" element={<Reallocations />} />
             <Route path="/evidence" element={<Evidence />} />
             <Route path="/audit" element={<Audit />} />
+            <Route path="/inbox" element={<Inbox />} />
           </Routes>
         </div>
       </main>
     </div>
+  );
+}
+
+export default function App() {
+  const { isLoading } = useAuth();
+
+  if (isLoading) return <LoadingState label="Loading FairFill…" />;
+
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route
+        path="/ngo"
+        element={
+          <ProtectedRoute role="NGO">
+            <NgoProposal />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/*"
+        element={
+          <ProtectedRoute role="COMPANY">
+            <CompanyApp />
+          </ProtectedRoute>
+        }
+      />
+    </Routes>
   );
 }

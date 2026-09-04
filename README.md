@@ -360,6 +360,19 @@ FairFill is a **decision-support system**. It does not autonomously transfer mon
 
 ---
 
+## 10.1 Authentication & NGO proposal pipeline
+
+Two account roles, backed by real server-side sessions (httpOnly JWT cookie, bcrypt password hashing) — never frontend-only auth:
+
+- **COMPANY** — sees the FairFill dashboard exactly as described above, plus a **Proposal Inbox** (sidebar → Govern) for reviewing proposals NGOs have sent. One company login can represent multiple companies (`companies` array on the profile).
+- **NGO** — signs into a separate, minimal portal (`/ngo`) to upload a funding proposal document (PDF/DOCX/plain text) and choose which companies receive it. Every route is role-gated server-side, not just hidden in the UI.
+
+**How a proposal becomes a project, without touching the engine.** The uploaded document is parsed by a deterministic, regex-based extraction service (`server/src/services/proposalExtraction.ts`) — no LLM, matching the same "no AI in the core engine" principle as the allocation math itself. It's pluggable: a smarter parser could replace it later without changing anything downstream. Extracted fields (name, budget, impact units, domain, region) are stored as a plain JSON blob. When a company clicks **Accept**, that JSON is turned into a real `Project` row using the exact same tier-fallback logic as the manual JSON-import feature (§ import in Sidebar) — the NGO and region are resolved from the *authenticated NGO's own profile*, never guessed from free text, so acceptance can never fail on an unresolvable name. The new project then competes for funding in the next `Generate Allocation` run like any seeded project.
+
+Demo accounts are in `DEMO_CREDENTIALS.md` (mock passwords only, never real secrets) — a ready-to-upload sample proposal lives at `sample-proposal.txt`.
+
+---
+
 ## 11. Demo mode / reset
 
 **Reset Demo** (sidebar, with a confirmation dialog) wipes every table and reseeds the identical deterministic scenario used at first install — the judge can never accidentally leave the system in a broken state, and the exact same demo can be repeated indefinitely.
@@ -370,7 +383,7 @@ FairFill is a **decision-support system**. It does not autonomously transfer mon
 
 - **Single shared peer cohort.** All four regions currently share one peer group for the equity calculation; the architecture supports multiple named peer groups (e.g. rural vs. urban cohorts) — the seed data simply uses one for a clean pairwise comparison.
 - **Domain indicator weights are shared across domains** for simplicity (same four-slot weighting for Healthcare/Water/Education); a production system would tune weights per domain.
-- **No authentication/roles** — this is a single-tenant prototype; a real deployment would need CSR-committee login, per-company scoping, and audit-actor identity beyond the placeholder "CSR Administrator".
+- **Single shared CSR pool across companies.** Accepting an NGO proposal (see §10.1) adds it to the one shared ₹1 Cr candidate pool rather than a per-company budget — splitting the pool per company would change Layer 1's water-filling math, which is out of scope for this pass. Audit-actor identity also still uses the placeholder "CSR Administrator" rather than the logged-in user's name.
 - **Rewinding the clock** moves `currentSimulatedMonth` back but does not revert already-resolved milestone outcomes — documented as a deliberate simplification rather than building full undo/redo.
 - **Evidence is human-reviewable, not verified.** No computer vision or ML runs on uploaded evidence; this is explicit and intentional for the prototype.
 - **Future AI evidence layer.** The architecture's Evidence Layer is intentionally separated from the deterministic Allocation Layer specifically so an AI-assisted ingestion pipeline (e.g. OCR on government indicator PDFs, satellite-imagery-based underservice estimation, or LLM-assisted evidence summarization) could be added later *without* touching the scoring or allocation math — it would only ever produce new `RegionIndicator` rows, never scores or allocations directly. Determinism of the core engine (same inputs → same outputs) is a deliberate governance property, not an oversight.
